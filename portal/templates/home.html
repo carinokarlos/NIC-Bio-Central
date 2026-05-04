@@ -1,0 +1,726 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* --- Master Theme Variables --- */
+  :root {
+    --bg-surface: rgba(30, 30, 47, 0.7);
+    --border-light: rgba(255, 255, 255, 0.1);
+    --text-main: #ffffff;
+    --text-muted: #a0a0a0;
+    --accent: #4da3ff;
+    --accent-glow: rgba(77, 163, 255, 0.4);
+    --success: #10b981;
+    --bg-main: #0a0a12;
+  }
+
+  body {
+    background-color: var(--bg-main) !important;
+  }
+
+  /* --- Force Footer to Blend into Login Background --- */
+  footer, .footer, #footer, footer * {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* --- Layout Wrappers --- */
+  .dashboard-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;   /* Centers horizontally */
+    width: 100%;
+    min-height: 100vh;         /* Forces the footer below */
+    padding: 2rem;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  /* Separating the vertical alignment for Login vs Dashboard */
+  .wrapper-login {
+    align-items: center;       /* Centers the login pane vertically */
+  }
+
+  .wrapper-dash {
+    align-items: flex-start;   /* Anchors dashboard to the top to fix the huge gap */
+    padding-top: 4rem;         /* Adds a nice standard top margin */
+  }
+
+  .dashboard-content {
+    display: flex;
+    flex-direction: column;
+    /* align-items removed to keep the dashboard left-aligned */
+    width: 100%;
+    max-width: 1300px;
+    gap: 2rem;
+    z-index: 2;
+  }
+
+  /* --- Typography --- */
+  .welcome-header {
+    width: 100%;
+    text-align: left;        /* Aligned left just like your original design */
+    padding-left: 0.5rem;
+    animation: fadeInDown 0.6s ease-out forwards;
+  }
+
+  .welcome-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.5rem 0;
+    letter-spacing: 0.5px;
+  }
+
+  .welcome-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  /* --- Animation Classes --- */
+  @keyframes popIn {
+    0% { opacity: 0; transform: scale(0.9) translateY(30px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes orb-drift-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.05); }
+    66% { transform: translate(-20px, 15px) scale(0.95); }
+  }
+
+  @keyframes orb-drift-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(-25px, 20px) scale(0.95); }
+    66% { transform: translate(20px, -15px) scale(1.05); }
+  }
+
+  .pop-in-container {
+    animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+  .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+
+  /* =========================================
+     LOGIN SCREEN 
+  ========================================= */
+  .login-scene-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .login-scene-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.18;
+  }
+
+  .orb-1 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #3b82f6, transparent 70%);
+    top: -100px; left: -100px;
+    animation: orb-drift-1 18s ease-in-out infinite;
+  }
+
+  .orb-2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, #6366f1, transparent 70%);
+    bottom: -80px; right: -80px;
+    animation: orb-drift-2 14s ease-in-out infinite;
+  }
+
+  .biocentral-login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .slick-split-card {
+    display: flex;
+    width: 100%;
+    max-width: 950px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: none; 
+    opacity: 0;
+    animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* ---- LEFT: Form Side ---- */
+  .split-form-side {
+    flex: 1;
+    padding: 3rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+  }
+
+  .form-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-eyebrow::before {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .form-heading {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin: 0 0 0.4rem;
+    letter-spacing: -1px;
+    color: var(--text-main);
+  }
+
+  .form-subheading {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0 0 2rem;
+  }
+
+  .minimal-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .field-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 600;
+    margin-left: 4px;
+    transition: color 0.3s ease;
+  }
+
+  .input-container {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+  }
+
+  .field-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    font-size: 0.95rem;
+    transition: color 0.4s ease;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .minimal-input {
+    width: 100%;
+    padding: 14px 16px 14px 44px;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    outline: none;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+  }
+
+  .minimal-input::placeholder {
+    color: #555;
+    transition: opacity 0.3s ease;
+  }
+
+  .underline-fx {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 2px;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -2px 10px var(--accent-glow);
+    z-index: 2;
+  }
+
+  .minimal-input:focus ~ .underline-fx {
+    width: 100%;
+  }
+
+  .minimal-input:focus ~ .field-icon {
+    color: var(--accent);
+  }
+
+  .minimal-input:focus::placeholder {
+    opacity: 0.3;
+  }
+
+  .input-container:focus-within {
+    background: rgba(77, 163, 255, 0.03);
+    border-color: rgba(77, 163, 255, 0.2);
+    box-shadow: inset 0 0 15px rgba(77, 163, 255, 0.05);
+  }
+
+  .input-container:focus-within ~ .field-label, 
+  .field-wrap:focus-within .field-label {
+    color: var(--accent);
+  }
+
+  .minimal-input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px rgba(20,20,32,1) inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+
+  .pwd-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    transition: color 0.3s ease;
+    font-size: 0.95rem;
+    z-index: 3;
+  }
+  .pwd-toggle:hover { color: var(--accent); }
+
+  .btn-login-wrap {
+    margin-top: 0.8rem;
+  }
+
+  .btn-login {
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #4da3ff 0%, #3b82f6 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: none; 
+  }
+
+  .btn-login:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #60b4ff 0%, #4d94ff 100%);
+  }
+
+  /* ---- RIGHT: Brand Side (Masked Logo) ---- */
+  .split-brand-side {
+    flex: 1.1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    background: rgba(10, 10, 18, 0.4);
+    border-left: 1px solid var(--border-light);
+  }
+
+  .logo-wrapper {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 340px; 
+    margin: 0 auto 1.5rem auto;
+  }
+
+  .brand-logo-img {
+    width: 100%;
+    height: auto;
+    display: block; 
+    filter: invert(1) drop-shadow(0 0 20px rgba(77,163,255,0.4));
+  }
+
+  .fingerprint-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+
+    background-image: url("{{ url_for('static', filename='fingerprint.png') }}");
+    background-size: cover;
+    background-position: center;
+    
+    -webkit-mask-image: url("{{ url_for('static', filename='newtrends_long-removebg-preview.png') }}");
+    -webkit-mask-size: 100% 100%; 
+    -webkit-mask-repeat: no-repeat;
+    
+    mask-image: url("{{ url_for('static', filename='newtrends_long-removebg-preview.png') }}");
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+
+    clip-path: inset(0 75% 0 0);
+
+    filter: invert(1);
+    opacity: 0.6;
+    mix-blend-mode: screen;
+  }
+
+  .brand-wordmark {
+    text-align: center;
+  }
+
+  .brand-tagline {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  @media (max-width: 850px) {
+    .slick-split-card { flex-direction: column-reverse; max-width: 450px; }
+    .split-brand-side {
+      padding: 2.5rem 2rem;
+      border-left: none;
+      border-bottom: 1px solid var(--border-light);
+      min-height: auto;
+    }
+    .split-form-side { padding: 2.5rem 2rem; }
+  }
+
+  /* =========================================
+     DASHBOARD CARDS (ORIGINAL BENTO GRID)
+  ========================================= */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  .dash-card {
+    background: rgba(30, 30, 47, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    text-decoration: none;
+    color: white;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    min-height: 240px;
+    text-align: left;
+  }
+
+  .dash-card:hover {
+    transform: translateY(-8px);
+    background: rgba(45, 45, 65, 0.8);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+    color: white;
+  }
+
+  .dash-card::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.25;
+    transition: opacity 0.3s;
+  }
+
+  .dash-card:hover::before {
+    opacity: 0.6;
+  }
+
+  .card-blue::before { background: #3b82f6; }
+  .card-green::before { background: #10b981; }
+  .card-purple::before { background: #8b5cf6; }
+  .card-orange::before { background: #f59e0b; }
+
+  .dash-icon-wrap {
+    width: 55px;
+    height: 55px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-blue .dash-icon-wrap { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+  .card-green .dash-icon-wrap { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+  .card-purple .dash-icon-wrap { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+  .card-orange .dash-icon-wrap { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+  .dash-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .dash-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+    flex-grow: 1;
+  }
+
+  .dash-card-arrow {
+    align-self: flex-end;
+    margin-top: 1rem;
+    color: #666;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+  }
+
+  .dash-card:hover .dash-card-arrow {
+    color: #fff;
+    transform: translateX(5px);
+  }
+
+  /* Full Loading Overlay */
+  #loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(20, 20, 30, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .spinner-premium {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #4da3ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+
+<div id="loading-overlay">
+  <div class="spinner-premium mb-3"></div>
+  <h5 class="font-weight-bold" style="letter-spacing: 2px; color: var(--text-main);">AUTHENTICATING</h5>
+</div>
+
+{% if not session['sdr_loggedin'] %}
+
+<div class="dashboard-wrapper wrapper-login">
+  <div class="login-scene-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <div class="biocentral-login-wrapper">
+    <div class="slick-split-card">
+
+      <div class="split-form-side">
+        <p class="form-eyebrow">MIS | BioCentral</p>
+        <h2 class="form-heading">Sign In</h2>
+        <p class="form-subheading">Access the Biometrics management portal.</p>
+
+        <form id="login-form" method="POST" class="minimal-form" autocomplete="off">
+          
+          <div class="field-wrap">
+            <label class="field-label" for="inp-username">Username</label>
+            <div class="input-container">
+              <input type="text" name="username" id="inp-username" class="minimal-input" placeholder="Enter your Username" spellcheck="false" autocomplete="nope" required autofocus>
+              <i class="fas fa-user field-icon"></i>
+              <span class="underline-fx"></span>
+            </div>
+          </div>
+
+          <div class="field-wrap">
+            <label class="field-label" for="inp-password">Password</label>
+            <div class="input-container">
+              <input type="password" name="password" id="inp-password" class="minimal-input" placeholder="Enter your password" spellcheck="false" autocomplete="new-password" required>
+              <i class="fas fa-lock field-icon"></i>
+              <button type="button" class="pwd-toggle" id="pwd-toggle" tabindex="-1" aria-label="Toggle password visibility">
+                <i class="fas fa-eye-slash" id="pwd-icon"></i>
+              </button>
+              <span class="underline-fx"></span>
+            </div>
+          </div>
+
+          <div class="btn-login-wrap">
+            <button type="submit" class="btn-login">
+              Sign In
+              <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="split-brand-side">
+        <div class="logo-wrapper">
+          <img src="{{ url_for('static', filename='print-removebg-preview.png') }}" alt="Newtrends International Corporation Logo" class="brand-logo-img">
+          <div class="fingerprint-overlay"></div>
+        </div>
+
+        <div class="brand-wordmark">
+          <div class="brand-tagline">Biometrics Management</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% else %}
+
+<div class="dashboard-wrapper wrapper-dash">
+  <div class="dashboard-content">
+
+    <div class="welcome-header">
+      <h1 class="welcome-title">Welcome back, {{ session.get('username', 'User').split('.')[0] | title }}!</h1>
+      <p class="welcome-subtitle">Select a module below to manage device connections and employee data.</p>
+    </div>
+
+    <div class="dashboard-grid">
+
+      <a href="/get-employee" class="dash-card card-blue pop-in-container stagger-1">
+        <div class="dash-icon-wrap">
+          <i class="fas fa-network-wired"></i>
+        </div>
+        <h3>Connect Device</h3>
+        <p>Establish a connection to a specific store device to view or pull current biometric data.</p>
+        <i class="fas fa-arrow-right dash-card-arrow"></i>
+      </a>
+
+      <a href="/new_fingerprint" class="dash-card card-green pop-in-container stagger-2">
+        <div class="dash-icon-wrap">
+          <i class="fas fa-fingerprint"></i>
+        </div>
+        <h3>Register Fingerprint</h3>
+        <p>Enroll new employee fingerprints into the system.</p>
+        <i class="fas fa-arrow-right dash-card-arrow"></i>
+      </a>
+
+      <a href="/move_registration" class="dash-card card-purple pop-in-container stagger-3">
+        <div class="dash-icon-wrap">
+          <i class="fas fa-exchange-alt"></i>
+        </div>
+        <h3>Copy Data</h3>
+        <p>Transfer existing employee registration data and fingerprints between devices.</p>
+        <i class="fas fa-arrow-right dash-card-arrow"></i>
+      </a>
+
+      <a href="/reset_time" class="dash-card card-orange pop-in-container stagger-4">
+        <div class="dash-icon-wrap">
+          <i class="fas fa-clock"></i>
+        </div>
+        <h3>Sync Device Time</h3>
+        <p>Align remote terminal clocks with the central server to ensure accurate attendance logs.</p>
+        <i class="fas fa-arrow-right dash-card-arrow"></i>
+      </a>
+
+    </div>
+
+  </div>
+</div>
+
+{% endif %}
+
+<script>
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', () => {
+      document.getElementById('loading-overlay').style.display = 'flex';
+    });
+  }
+
+  const pwdToggle = document.getElementById('pwd-toggle');
+  const pwdInput  = document.getElementById('inp-password');
+  const pwdIcon   = document.getElementById('pwd-icon');
+  if (pwdToggle) {
+    pwdToggle.addEventListener('click', () => {
+      const isHidden = pwdInput.type === 'password';
+      pwdInput.type  = isHidden ? 'text' : 'password';
+      pwdIcon.className = isHidden ? 'fas fa-eye' : 'fas fa-eye-slash';
+    });
+  }
+</script>
+{% endblock %}

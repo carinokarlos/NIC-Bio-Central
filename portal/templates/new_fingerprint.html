@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Premium Entrance Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-entrance {
+        opacity: 0;
+        animation: fadeInUp 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+    }
+
+    .delay-1 {
+        animation-delay: 0.1s;
+    }
+
+    .delay-2 {
+        animation-delay: 0.3s;
+    }
+
+    .delay-3 {
+        animation-delay: 0.5s;
+    }
+
+    /* Glassmorphism & Bento Design */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    }
+
+    .hands-container {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin: 30px 0;
+        perspective: 1000px;
+    }
+
+    .hand {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        padding: 20px;
+        background: rgba(240, 244, 248, 0.6);
+        border-radius: 24px;
+        border: 2px solid rgba(148, 163, 184, 0.4);
+    }
+
+    /* HIGH VISIBILITY FINGERS */
+    .finger {
+        width: 35px;
+        background: #94a3b8;
+        border-radius: 20px 20px 10px 10px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        border: 2px solid #475569;
+        box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .finger::after {
+        content: attr(data-index);
+        position: absolute;
+        bottom: -28px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 13px;
+        font-weight: 800;
+        color: #334155;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .pinky {
+        height: 70px;
+    }
+
+    .ring {
+        height: 100px;
+    }
+
+    .middle {
+        height: 115px;
+    }
+
+    .index {
+        height: 105px;
+    }
+
+    .thumb {
+        height: 60px;
+        margin-top: 40px;
+    }
+
+    .left-hand .thumb {
+        transform: rotate(20deg);
+        margin-left: 10px;
+    }
+
+    .right-hand .thumb {
+        transform: rotate(-20deg);
+        margin-right: 10px;
+    }
+
+    .finger:hover {
+        background: #cbd5e1;
+        transform: translateY(-8px);
+        box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.1), 0 8px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .finger:hover::after {
+        opacity: 1;
+    }
+
+    .finger.active-selection {
+        background: #3b82f6;
+        border-color: #1e3a8a;
+        box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.2), 0 0 20px rgba(59, 130, 246, 0.6);
+        transform: translateY(-10px);
+    }
+
+    .finger.enrolling {
+        background: #f59e0b;
+        border-color: #92400e;
+        animation: pulse-orange 1.5s infinite;
+        transform: translateY(-10px);
+    }
+
+    .finger.success {
+        background: #10b981;
+        border-color: #064e3b;
+        box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.2), 0 0 20px rgba(16, 185, 129, 0.6);
+        transform: translateY(-10px);
+    }
+
+    @keyframes pulse-orange {
+        0% {
+            box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(245, 158, 11, 0.7);
+        }
+
+        70% {
+            box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.2), 0 0 0 15px rgba(245, 158, 11, 0);
+        }
+
+        100% {
+            box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(245, 158, 11, 0);
+        }
+    }
+
+    /* Premium Searchable Device List */
+    .device-list-container {
+        max-height: 240px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .device-list-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .device-list-container::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    .device-list-item {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+    }
+
+    .device-list-item:hover {
+        background-color: #f8fafc;
+        border-left-color: #94a3b8;
+    }
+
+    .device-list-item.selected {
+        background-color: #eff6ff;
+        border-left-color: #3b82f6;
+    }
+
+    .device-list-item.selected .select-check {
+        display: block !important;
+        animation: scaleIn 0.2s ease-out forwards;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* Live Search Autocomplete */
+    .search-wrapper {
+        position: relative;
+        z-index: 1050;
+        /* FIX: Guarantee wrapper is above the rest of the form */
+    }
+
+    .autocomplete-dropdown {
+        position: absolute;
+        top: calc(100% + 5px);
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        /* FIX: Explicit solid white background */
+        border-radius: 12px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        border: 1px solid #cbd5e1;
+        z-index: 9999;
+        /* FIX: Absolute top index */
+        max-height: 250px;
+        overflow-y: auto;
+        display: none;
+    }
+
+    .autocomplete-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.2s;
+    }
+
+    .autocomplete-item:hover {
+        background: #f8fafc;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="glass-card p-4 animate-entrance">
+                <h4 class="fw-bold mb-4 border-bottom pb-2" style="color: black;">
+                    <i class="fa-solid fa-fingerprint text-primary me-2"></i> Remote Fingerprint Enrollment
+                </h4>
+
+                <div class="row animate-entrance delay-1" style="position: relative; z-index: 10;">
+                    <div class="col-12 mb-4">
+                        <label class="form-label fw-bold text-muted"><i class="fa-solid fa-network-wired me-2"></i>1.
+                            Select Target Device</label>
+                        <input type="hidden" id="targetIp" required>
+
+                        <div class="input-group mb-2 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                            <span class="input-group-text bg-white border-end-0 text-muted"><i
+                                    class="fa-solid fa-filter"></i></span>
+                            <input type="text" id="searchDevice" class="form-control border-start-0 py-2"
+                                placeholder="Filter devices by name or IP...">
+                        </div>
+
+                        <div class="device-list-container shadow-sm">
+                            {% for device in devices %}
+                            <div class="device-list-item p-3 border-bottom" data-ip="{{ device.ip }}"
+                                onclick="selectDevice(this, '{{ device.ip }}')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0 fw-bold text-dark device-name"><i
+                                                class="fa-solid fa-server text-secondary me-2"></i>{{ device.name }}
+                                        </h6>
+                                        <small class="text-muted device-ip ms-4">{{ device.ip }}</small>
+                                    </div>
+                                    <i class="fa-solid fa-circle-check text-primary fs-5 d-none select-check"></i>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <div id="noDeviceMessage" class="p-4 text-muted text-center d-none">
+                                <i class="fa-solid fa-ghost fs-3 mb-2 text-light"></i><br>No matching devices found.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-4">
+                        <label class="form-label fw-bold text-muted"><i
+                                class="fa-solid fa-user-magnifying-glass me-2"></i>2. Search Employee</label>
+                        <div class="search-wrapper">
+                            <input type="text" id="searchQuery" class="form-control form-control-lg shadow-sm"
+                                placeholder="Type name or code (e.g., Santayana)..." autocomplete="off" required>
+
+                            <input type="hidden" id="lockedAccessNo">
+
+                            <div id="searchResults" class="autocomplete-dropdown"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="animate-entrance delay-2" style="position: relative; z-index: 1;">
+                    <label class="form-label fw-bold text-muted w-100 text-center mt-3">3. Click a Finger to Begin
+                        Enrollment on Device</label>
+
+                    <div class="hands-container" id="handsContainer">
+                        <div class="hand left-hand shadow-sm">
+                            <div class="finger pinky" data-id="0" data-index="0" title="Left Pinky"></div>
+                            <div class="finger ring" data-id="1" data-index="1" title="Left Ring"></div>
+                            <div class="finger middle" data-id="2" data-index="2" title="Left Middle"></div>
+                            <div class="finger index" data-id="3" data-index="3" title="Left Index"></div>
+                            <div class="finger thumb" data-id="4" data-index="4" title="Left Thumb"></div>
+                        </div>
+                        <div class="hand right-hand shadow-sm">
+                            <div class="finger thumb" data-id="5" data-index="5" title="Right Thumb"></div>
+                            <div class="finger index" data-id="6" data-index="6" title="Right Index"></div>
+                            <div class="finger middle" data-id="7" data-index="7" title="Right Middle"></div>
+                            <div class="finger ring" data-id="8" data-index="8" title="Right Ring"></div>
+                            <div class="finger pinky" data-id="9" data-index="9" title="Right Pinky"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="enrollFeedback" class="mt-4 text-center animate-entrance delay-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-5">
+                <i class="fa-solid fa-circle-check text-success mb-3 animate-entrance" style="font-size: 4.5rem;"></i>
+                <h3 class="fw-bold text-dark">Enrollment Complete!</h3>
+
+                <div class="p-3 bg-light rounded-3 my-3 text-start border shadow-sm">
+                    <p class="mb-2 fs-5"><strong class="text-dark">Employee:</strong> <span id="modalEmpName"
+                            class="text-primary fw-bold ms-1"></span></p>
+                    <p class="mb-0 fs-5"><strong class="text-dark">Access #:</strong> <span id="modalAccessNo"
+                            class="badge bg-success ms-1"></span></p>
+                </div>
+
+                <p class="text-secondary fw-semibold">The fingerprint has been securely stored in the device memory.</p>
+                <button type="button" class="btn btn-success px-5 py-2 rounded-pill mt-2 shadow-sm fw-bold"
+                    onclick="closeModalAndReset()">Thank You!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeFingerDiv = null;
+    let successModalInstance = null;
+
+    // --- Device List Selection & Filtering ---
+    function selectDevice(element, ip) {
+        document.querySelectorAll('.device-list-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        element.classList.add('selected');
+        document.getElementById('targetIp').value = ip;
+    }
+
+    document.getElementById('searchDevice').addEventListener('input', function () {
+        const query = this.value.toLowerCase();
+        const items = document.querySelectorAll('.device-list-item');
+        let hasVisible = false;
+
+        items.forEach(item => {
+            const name = item.querySelector('.device-name').innerText.toLowerCase();
+            const ip = item.querySelector('.device-ip').innerText.toLowerCase();
+
+            if (name.includes(query) || ip.includes(query)) {
+                item.style.display = 'block';
+                hasVisible = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        const noMessage = document.getElementById('noDeviceMessage');
+        if (!hasVisible) {
+            noMessage.classList.remove('d-none');
+        } else {
+            noMessage.classList.add('d-none');
+        }
+    });
+
+    // --- Live Employee Search ---
+    const searchInput = document.getElementById('searchQuery');
+    const searchResults = document.getElementById('searchResults');
+    const lockedAccessNo = document.getElementById('lockedAccessNo');
+    let searchTimeout = null;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        const query = this.value;
+        lockedAccessNo.value = '';
+
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/live_search_employee?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    searchResults.innerHTML = '';
+                    if (data.length === 0) {
+                        searchResults.innerHTML = '<div class="p-3 text-muted">No matches found.</div>';
+                    } else {
+                        data.forEach(emp => {
+                            const div = document.createElement('div');
+                            div.className = 'autocomplete-item';
+                            div.innerHTML = `
+                                <div class="fw-bold text-dark">${emp.name}</div>
+                                <small class="text-muted"><i class="fa-solid fa-id-badge me-1"></i>${emp.code} | Access #: ${emp.access_no}</small>
+                            `;
+                            // FIX: Direct onclick attachment is bulletproof.
+                            div.onclick = function () {
+                                searchInput.value = emp.code;
+                                lockedAccessNo.value = emp.code;
+                                searchResults.style.display = 'none';
+                            };
+                            searchResults.appendChild(div);
+                        });
+                    }
+                    searchResults.style.display = 'block';
+                });
+        }, 300);
+    });
+
+    // FIX: Show dropdown again if user clicks back into input
+    searchInput.addEventListener('focus', function () {
+        if (this.value.length >= 2 && searchResults.children.length > 0) {
+            searchResults.style.display = 'block';
+        }
+    });
+
+    // FIX: Delay closing the dropdown so the item's click event has time to fire.
+    searchInput.addEventListener('blur', function () {
+        setTimeout(() => {
+            searchResults.style.display = 'none';
+        }, 200);
+    });
+
+    // --- Hardware Trigger ---
+    document.querySelectorAll('.finger').forEach(finger => {
+        finger.addEventListener('click', function () {
+            const ip = document.getElementById('targetIp').value;
+            const searchQuery = document.getElementById('lockedAccessNo').value || document.getElementById('searchQuery').value;
+            const feedback = document.getElementById('enrollFeedback');
+
+            if (!ip || !searchQuery) {
+                feedback.innerHTML = `<span class="text-danger fw-bold animate-entrance"><i class="fa-solid fa-triangle-exclamation"></i> Please select a device and enter an employee first.</span>`;
+                return;
+            }
+
+            document.querySelectorAll('.finger').forEach(f => f.classList.remove('active-selection', 'enrolling', 'success'));
+
+            this.classList.add('enrolling');
+            activeFingerDiv = this;
+            const tempId = this.getAttribute('data-id');
+
+            triggerHardware(ip, searchQuery, tempId, feedback);
+        });
+    });
+
+    function triggerHardware(ip, searchQuery, tempId, feedback) {
+        feedback.innerHTML = `
+            <div class="alert alert-warning border-2 shadow-sm text-start animate-entrance" role="alert" style="background: rgba(255, 243, 205, 0.9);">
+                <h4 class="alert-heading fw-bold mb-2 text-dark"><i class="fa-solid fa-fingerprint fa-fade text-warning"></i> Device Triggered!</h4>
+                <p class="mb-0 fs-5 text-dark"><i class="fa-solid fa-hand-point-down"></i> <strong>Look at the scanner!</strong> Please press finger index <strong>${tempId}</strong> on the device 3 times.</p>
+                <hr>
+                <small class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Waiting for hardware response...</small>
+            </div>
+        `;
+
+        fetch('/api/enroll_fingerprint', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip, search_query: searchQuery, temp_id: tempId })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    activeFingerDiv.classList.remove('enrolling');
+                    activeFingerDiv.classList.add('success');
+
+                    feedback.innerHTML = `<span class="text-success fw-bold fs-5 animate-entrance"><i class="fa-solid fa-check-double"></i> Hardware sync complete!</span>`;
+
+                    document.getElementById('modalEmpName').innerText = data.emp_name;
+                    document.getElementById('modalAccessNo').innerText = data.access_no;
+
+                    const modalEl = document.getElementById('successModal');
+                    successModalInstance = new bootstrap.Modal(modalEl);
+                    successModalInstance.show();
+
+                } else {
+                    feedback.innerHTML = `<span class="text-danger fw-bold fs-5 animate-entrance"><i class="fa-solid fa-circle-xmark"></i> ${data.message}</span>`;
+                    activeFingerDiv.classList.remove('enrolling');
+                }
+            })
+            .catch(error => {
+                feedback.innerHTML = `<span class="text-danger fw-bold fs-5 animate-entrance"><i class="fa-solid fa-triangle-exclamation"></i> System Error: ${error}</span>`;
+                activeFingerDiv.classList.remove('enrolling');
+            });
+    }
+
+    function closeModalAndReset() {
+        if (successModalInstance) {
+            successModalInstance.hide();
+        }
+
+        document.getElementById('searchQuery').value = '';
+        document.getElementById('lockedAccessNo').value = '';
+        document.getElementById('enrollFeedback').innerHTML = '';
+        document.querySelectorAll('.finger').forEach(f => f.classList.remove('success', 'enrolling', 'active-selection'));
+    }
+</script>
+{% endblock %}

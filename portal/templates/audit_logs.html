@@ -1,0 +1,1688 @@
+{% extends 'base.html' %}
+
+{% block title %}System Audit Logs{% endblock %}
+
+{% block content %}
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
+<style>
+    :root {
+        --bg-page: #f3f4f6;
+        --bg-surface: #ffffff;
+        --bg-muted: #f9fafb;
+        --bg-hover: #f3f4f6;
+        --border: #e5e7eb;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --text-muted: #9ca3af;
+        --blue-bg: #eff6ff;
+        --blue-text: #1d4ed8;
+        --green-bg: #f0fdf4;
+        --green-text: #15803d;
+        --red-bg: #fef2f2;
+        --red-text: #b91c1c;
+        --yellow-bg: #fffbeb;
+        --yellow-text: #b45309;
+        --gray-bg: #f3f4f6;
+        --gray-text: #374151;
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    @keyframes popIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes pulse-ring {
+        0% {
+            box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.25);
+        }
+
+        70% {
+            box-shadow: 0 0 0 8px rgba(109, 40, 217, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(109, 40, 217, 0);
+        }
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .pop-in-container {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .stagger-1 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.1s;
+        opacity: 0;
+    }
+
+    .stagger-2 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
+
+    .manager-wrapper {
+        flex: 1;
+        width: 100%;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    /* --- Page Header --- */
+    .page-header-bar {
+        width: 100%;
+        max-width: 1400px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 1.75rem;
+        display: flex;
+        align-items: center;
+        padding: 1.5rem 2rem;
+        gap: 2rem;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+        animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        position: relative;
+        z-index: 50;
+    }
+
+    .page-header-bar::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.35;
+        pointer-events: none;
+        border-radius: inherit;
+    }
+
+    .header-icon-wrap {
+        position: relative;
+        flex-shrink: 0;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #6d28d9, #4f46e5);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35);
+        animation: pulse-ring 2.5s ease-out 0.8s infinite;
+        z-index: 1;
+    }
+
+    .header-icon-wrap i {
+        width: 26px;
+        height: 26px;
+        color: #fff;
+    }
+
+    .header-left-group {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        z-index: 1;
+    }
+
+    .page-header-left {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .welcome-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.025em;
+        line-height: 1;
+        margin: 0;
+    }
+
+    .welcome-subtitle {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        margin: 2px 0 0 0;
+        line-height: 1.2;
+    }
+
+    .header-divider {
+        width: 1px;
+        height: 52px;
+        background: var(--border);
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    .page-header-stats {
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    .stat-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--bg-muted);
+        min-width: 120px;
+        transition: transform 0.15s, box-shadow 0.15s;
+        cursor: default;
+    }
+
+    .stat-chip:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-chip-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .stat-chip-icon i {
+        width: 16px;
+        height: 16px;
+    }
+
+    .stat-chip-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .stat-chip-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--text-primary);
+    }
+
+    .stat-chip-label {
+        font-size: 0.6875rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
+
+    .chip-purple {
+        background: #f5f3ff;
+        border-color: #ddd6fe;
+    }
+
+    .chip-purple .stat-chip-icon {
+        background: #ede9fe;
+    }
+
+    .chip-purple .stat-chip-icon i {
+        color: #7c3aed;
+    }
+
+    .chip-purple .stat-chip-value {
+        color: #6d28d9;
+    }
+
+    .chip-blue {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+    }
+
+    .chip-blue .stat-chip-icon {
+        background: #dbeafe;
+    }
+
+    .chip-blue .stat-chip-icon i {
+        color: #2563eb;
+    }
+
+    .chip-blue .stat-chip-value {
+        color: #1d4ed8;
+    }
+
+    .chip-green {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+    }
+
+    .chip-green .stat-chip-icon {
+        background: #dcfce7;
+    }
+
+    .chip-green .stat-chip-icon i {
+        color: #16a34a;
+    }
+
+    .chip-green .stat-chip-value {
+        color: #15803d;
+    }
+
+    .chip-red {
+        background: #fef2f2;
+        border-color: #fecaca;
+    }
+
+    .chip-red .stat-chip-icon {
+        background: #fee2e2;
+    }
+
+    .chip-red .stat-chip-icon i {
+        color: #dc2626;
+    }
+
+    .chip-red .stat-chip-value {
+        color: #b91c1c;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    /* --- Toolbar --- */
+    .toolbar {
+        width: 100%;
+        max-width: 1400px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        flex: 1;
+        align-items: center;
+    }
+
+    .search-wrapper {
+        position: relative;
+        min-width: 280px;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        width: 16px;
+        height: 16px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 8px 12px 8px 36px;
+        font-size: 0.875rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .search-input:focus {
+        border-color: var(--blue-text);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
+    .filter-select {
+        font-size: 0.875rem;
+        padding: 8px 12px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        cursor: pointer;
+        outline: none;
+    }
+
+    .filter-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        white-space: nowrap;
+        align-self: center;
+    }
+
+    .filter-divider {
+        width: 1px;
+        height: 28px;
+        background: var(--border);
+        margin: 0 4px;
+    }
+
+    /* Active filter badge */
+    .active-filters {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        width: 100%;
+        max-width: 1400px;
+        margin-bottom: 0.75rem;
+    }
+
+    .filter-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+    }
+
+    .filter-tag button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #1d4ed8;
+        padding: 0;
+        line-height: 1;
+        font-size: 0.875rem;
+    }
+
+    /* --- Buttons --- */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        transition: background .15s;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+        background: var(--bg-muted);
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-primary {
+        background: var(--text-primary);
+        color: var(--bg-surface);
+        border-color: transparent;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: #1f2937;
+    }
+
+    .btn-success {
+        background: #15803d;
+        color: #fff;
+        border-color: transparent;
+    }
+
+    .btn-success:hover:not(:disabled) {
+        background: #166534;
+    }
+
+    .btn i {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Export dropdown Fixed */
+    .export-dropdown {
+        position: relative;
+    }
+
+    .export-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 8px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        z-index: 9999;
+        min-width: 190px;
+        overflow: hidden;
+        display: none;
+    }
+
+    .export-menu.open {
+        display: block;
+    }
+
+    .export-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 16px;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: background 0.1s;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+    }
+
+    .export-item:hover {
+        background: var(--bg-muted);
+    }
+
+    .export-item i {
+        width: 15px;
+        height: 15px;
+        color: var(--text-secondary);
+    }
+
+    /* --- Table Card --- */
+    .table-container {
+        width: 100%;
+        max-width: 1400px;
+    }
+
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .audit-table thead th {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 12px 16px;
+        text-align: left;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+    }
+
+    .audit-table thead th:hover {
+        background: var(--bg-muted);
+        color: var(--text-primary);
+    }
+
+    .th-content {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .sort-icon {
+        width: 14px;
+        height: 14px;
+        opacity: 0.3;
+    }
+
+    .sort-active {
+        opacity: 1;
+        color: var(--blue-text);
+    }
+
+    .audit-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background .1s;
+    }
+
+    .audit-table tbody tr:nth-child(even) {
+        background-color: var(--bg-muted);
+    }
+
+    .audit-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .audit-table tbody tr.is-clickable {
+        cursor: pointer;
+    }
+
+    .audit-table tbody tr:hover td {
+        background: #f3f4f6;
+    }
+
+    .audit-table tbody td {
+        padding: 12px 16px;
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    /* --- Table Cell Formatting --- */
+    .ts-date {
+        font-weight: 500;
+        font-size: 0.8125rem;
+    }
+
+    .ts-time {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+        font-family: ui-monospace, monospace;
+    }
+
+    .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: .02em;
+    }
+
+    .av-blue {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border: 1px solid #bfdbfe;
+    }
+
+    .av-green {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border: 1px solid #bbf7d0;
+    }
+
+    .av-yellow {
+        background: var(--yellow-bg);
+        color: var(--yellow-text);
+        border: 1px solid #fde68a;
+    }
+
+    .av-red {
+        background: var(--red-bg);
+        color: var(--red-text);
+        border: 1px solid #fecaca;
+    }
+
+    .av-gray {
+        background: var(--gray-bg);
+        color: var(--gray-text);
+        border: 1px solid var(--border);
+    }
+
+    .user-name {
+        font-weight: 500;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+
+    .badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .badge-success {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border: 1px solid #bbf7d0;
+    }
+
+    .badge-success .badge-dot {
+        background: var(--green-text);
+    }
+
+    .badge-danger {
+        background: var(--red-bg);
+        color: var(--red-text);
+        border: 1px solid #fecaca;
+    }
+
+    .badge-danger .badge-dot {
+        background: var(--red-text);
+    }
+
+    .badge-warning {
+        background: var(--yellow-bg);
+        color: var(--yellow-text);
+        border: 1px solid #fde68a;
+    }
+
+    .badge-warning .badge-dot {
+        background: var(--yellow-text);
+    }
+
+    .badge-info {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border: 1px solid #bfdbfe;
+    }
+
+    .badge-info .badge-dot {
+        background: var(--blue-text);
+    }
+
+    .badge-neutral {
+        background: var(--gray-bg);
+        color: var(--gray-text);
+        border: 1px solid var(--border);
+    }
+
+    .badge-neutral .badge-dot {
+        background: var(--gray-text);
+    }
+
+    .detail-text {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        display: block;
+    }
+
+    .device-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+    }
+
+    .device-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .device-name {
+        font-weight: 500;
+        font-size: 0.8125rem;
+    }
+
+    .device-meta {
+        font-size: 0.6875rem;
+        color: var(--text-secondary);
+        font-family: ui-monospace, monospace;
+        margin-top: 2px;
+    }
+
+    .device-arrow {
+        color: var(--text-muted);
+        opacity: 0.5;
+        transition: 0.2s;
+    }
+
+    tr.is-clickable:hover .device-arrow {
+        opacity: 1;
+        color: var(--blue-text);
+        transform: translateX(2px);
+    }
+
+    /* --- Pagination --- */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-surface);
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .page-info {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .page-num-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.1s;
+    }
+
+    .page-num-btn:hover {
+        background: var(--bg-muted);
+    }
+
+    .page-num-btn.active {
+        background: var(--text-primary);
+        color: #fff;
+        border-color: var(--text-primary);
+    }
+
+    .page-size-select {
+        font-size: 0.8125rem;
+        padding: 5px 8px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        cursor: pointer;
+        outline: none;
+    }
+
+    /* --- Modal --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        width: 450px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modal-head {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-body {
+        padding: 0;
+    }
+
+    .modal-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .modal-row:last-child {
+        border-bottom: none;
+    }
+
+    .modal-row-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        width: 110px;
+        flex-shrink: 0;
+        padding-top: 2px;
+    }
+
+    .modal-row-val {
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        font-weight: 500;
+        word-break: break-all;
+    }
+
+    .modal-row-val code {
+        font-family: ui-monospace, monospace;
+        font-size: 0.8125rem;
+        background: var(--bg-muted);
+        padding: 4px 8px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        font-weight: 400;
+    }
+
+    .modal-foot {
+        padding: 16px 24px;
+        background: var(--bg-muted);
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .spinner-container {
+        padding: 3rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .spinner-ring {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border);
+        border-top-color: var(--blue-text);
+        border-radius: 50%;
+        animation: spin .8s linear infinite;
+    }
+
+    /* Toast */
+    .toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .toast {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #111827;
+        color: #fff;
+        border-radius: var(--radius-md);
+        padding: 12px 18px;
+        font-size: 0.875rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        animation: fadeUp 0.3s ease;
+        min-width: 220px;
+    }
+
+    .toast i {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .toast.toast-success {
+        background: #15803d;
+    }
+
+    .toast.toast-error {
+        background: #b91c1c;
+    }
+</style>
+
+<div class="manager-wrapper">
+
+    <div class="page-header-bar">
+        <div class="header-left-group">
+            <div class="header-icon-wrap">
+                <i data-lucide="shield-check"></i>
+            </div>
+            <div class="page-header-left">
+                <h2 class="welcome-title">System Audit Logs</h2>
+                <p class="welcome-subtitle">Review system access, modifications, and device actions.</p>
+            </div>
+        </div>
+        <div class="header-divider"></div>
+        <div class="page-header-stats">
+            <div class="stat-chip chip-purple">
+                <div class="stat-chip-icon"><i data-lucide="list-checks"></i></div>
+                <div class="stat-chip-body">
+                    <span class="stat-chip-value" id="statTotal">0</span>
+                    <span class="stat-chip-label">Total Events</span>
+                </div>
+            </div>
+            <div class="stat-chip chip-blue">
+                <div class="stat-chip-icon"><i data-lucide="monitor"></i></div>
+                <div class="stat-chip-body">
+                    <span class="stat-chip-value" id="statDevices">0</span>
+                    <span class="stat-chip-label">Unique Devices</span>
+                </div>
+            </div>
+
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-actions">
+            <button class="btn" onclick="clearAllFilters()" title="Clear all filters">
+                <i data-lucide="filter-x"></i> Clear
+            </button>
+            <button class="btn" onclick="window.location.reload()">
+                <i data-lucide="refresh-cw"></i> Refresh
+            </button>
+            <div class="export-dropdown" id="exportDropdown">
+                <button class="btn btn-primary" onclick="toggleExportMenu(event)">
+                    <i data-lucide="download"></i> Export <i data-lucide="chevron-down"
+                        style="width:12px;height:12px;margin-left:2px;"></i>
+                </button>
+                <div class="export-menu" id="exportMenu">
+                    <button class="export-item" onclick="exportData('csv')">
+                        <i data-lucide="file-text"></i> Export as CSV
+                    </button>
+                    <!-- <button class="export-item" onclick="exportData('json')">
+                        <i data-lucide="braces"></i> Export as JSON
+                    </button> -->
+                    <button class="export-item" onclick="exportData('print')">
+                        <i data-lucide="printer"></i> Print / Save PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toolbar stagger-2">
+        <div class="filter-row">
+            <div class="search-wrapper">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search user, action, details...">
+            </div>
+
+            <div class="filter-divider"></div>
+            <span class="filter-label">Action:</span>
+            <select class="filter-select" id="actionFilter">
+                <option value="">All Actions</option>
+                <option value="UPDATED">Updated</option>
+                <option value="DELETED">Deleted</option>
+                <option value="REGISTERED">Registered</option>
+            </select>
+
+            <div class="filter-divider"></div>
+            <span class="filter-label">From:</span>
+            <input type="date" class="filter-select" id="dateFrom" style="min-width:140px;">
+            <span class="filter-label">To:</span>
+            <input type="date" class="filter-select" id="dateTo" style="min-width:140px;">
+        </div>
+    </div>
+
+    <div class="active-filters" id="activeFilters"></div>
+
+    <div class="table-container pop-in-container stagger-2">
+        <div class="table-card">
+            <table class="audit-table" id="auditTable">
+                <thead>
+                    <tr>
+                        <th style="width: 155px;" onclick="sortTable('timestamp', 0)">
+                            <div class="th-content">Timestamp <i data-lucide="chevrons-up-down" class="sort-icon"
+                                    id="icon-0"></i></div>
+                        </th>
+                        <th style="width: 190px;" onclick="sortTable('username', 1)">
+                            <div class="th-content">User <i data-lucide="chevrons-up-down" class="sort-icon"
+                                    id="icon-1"></i></div>
+                        </th>
+                        <th style="width: 145px;" onclick="sortTable('action', 2)">
+                            <div class="th-content">Action <i data-lucide="chevrons-up-down" class="sort-icon"
+                                    id="icon-2"></i></div>
+                        </th>
+                        <th onclick="sortTable('details', 3)">
+                            <div class="th-content">Details <i data-lucide="chevrons-up-down" class="sort-icon"
+                                    id="icon-3"></i></div>
+                        </th>
+                        <th style="width: 210px;" onclick="sortTable('device_name', 4)">
+                            <div class="th-content">Device / Branch <i data-lucide="chevrons-up-down" class="sort-icon"
+                                    id="icon-4"></i></div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="audit-tbody"></tbody>
+            </table>
+
+            <div class="pagination-wrapper">
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <div class="page-info" id="pageInfo">Showing 0 to 0 of 0 entries</div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:0.8125rem; color:var(--text-secondary);">Rows:</span>
+                        <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
+                            <option value="15" selected>15</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pagination-controls" id="paginationControls"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <div style="width: 100%; max-width: 1400px; display: flex; justify-content: center; margin-top: 1.5rem; padding-bottom: 2rem;">
+        <button class="btn" style="background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-secondary); padding: 8px 24px; box-shadow: var(--shadow-sm);" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+            <i data-lucide="arrow-up" style="width: 16px; height: 16px;"></i> Back to Top
+        </button>
+    </div> -->
+
+</div>
+
+<div id="deviceModal" class="modal-overlay">
+    <div class="modal-card pop-in-container">
+        <div class="modal-head">
+            <span id="modalTitle">Device Properties</span>
+            <button onclick="closeModal('deviceModal')"
+                style="background:none;border:none;cursor:pointer;color:var(--text-muted);"><i data-lucide="x"
+                    style="width:18px;height:18px;"></i></button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <div class="spinner-container">
+                <div class="spinner-ring"></div>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="btn" onclick="closeModal('deviceModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="exportLoadingModal" class="modal-overlay" style="z-index: 10000;">
+    <div class="modal-card pop-in-container" style="width: 320px; text-align: center; padding: 2rem;">
+        <div class="spinner-container" style="padding: 1rem;">
+            <div class="spinner-ring"></div>
+        </div>
+        <h3 style="margin: 0; color: var(--text-primary); font-size: 1.1rem;">Preparing Export</h3>
+        <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 0.8125rem;">Please wait while we process
+            your data...</p>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div id="audit-data" data-logs='{{ logs | tojson | safe }}' style="display: none;"></div>
+
+<script>
+    // ===================== DATA INIT =====================
+    const rawDataElement = document.getElementById('audit-data');
+    const rawLogs = JSON.parse(rawDataElement.getAttribute('data-logs') || '[]');
+
+    let globalLogs = rawLogs.map(log => ({
+        id: log[0],
+        timestamp: log[1] || 'N/A',
+        username: log[2] || 'System',
+        type: log[3],
+        device_id: log[4],
+        action: log[5] || 'UNKNOWN',
+        details: log[6] || '',
+        device_name: log[7] || '',
+        ip: log[8] || '',
+        branch: log[9] || ''
+    }));
+
+    let currentSortCol = 'timestamp';
+    let sortAscending = false;
+    let currentPage = 1;
+    let itemsPerPage = 15;
+
+    const avMap = {
+        'a': 'av-green', 'b': 'av-blue', 'c': 'av-yellow', 'd': 'av-red', 'e': 'av-green',
+        'f': 'av-blue', 'g': 'av-yellow', 'h': 'av-red', 'i': 'av-green', 'j': 'av-blue',
+        'k': 'av-yellow', 'l': 'av-red', 'm': 'av-green', 'n': 'av-blue', 'o': 'av-yellow',
+        'p': 'av-red', 'q': 'av-green', 'r': 'av-blue', 's': 'av-yellow', 't': 'av-red',
+        'u': 'av-green', 'v': 'av-blue', 'w': 'av-yellow', 'x': 'av-red', 'y': 'av-green', 'z': 'av-blue'
+    };
+
+    // ===================== DOM READY =====================
+    document.addEventListener("DOMContentLoaded", function () {
+        lucide.createIcons();
+        updateStats(globalLogs);
+
+        // Initial sort icon
+        const activeIcon = document.getElementById('icon-0');
+        activeIcon.setAttribute('data-lucide', 'chevron-down');
+        activeIcon.classList.add('sort-active');
+        lucide.createIcons();
+
+        renderTable();
+
+        // Filter listeners
+        ['searchInput', 'actionFilter', 'dateFrom', 'dateTo'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => { currentPage = 1; renderTable(); renderActiveFilterTags(); });
+            document.getElementById(id).addEventListener('change', () => { currentPage = 1; renderTable(); renderActiveFilterTags(); });
+        });
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => { if (e.target === overlay) overlay.style.display = 'none'; });
+        });
+
+        // Close export menu on outside click
+        document.addEventListener('click', e => {
+            const dd = document.getElementById('exportDropdown');
+            if (!dd.contains(e.target)) {
+                document.getElementById('exportMenu').classList.remove('open');
+            }
+        });
+    });
+
+    // ===================== STATS =====================
+    function updateStats(dataset) {
+        document.getElementById('statTotal').innerText = dataset.length;
+        let uniqueDevices = new Set();
+        dataset.forEach(log => {
+            if (log.device_name) uniqueDevices.add(log.device_name);
+        });
+        document.getElementById('statDevices').innerText = uniqueDevices.size;
+    }
+
+    // ===================== FILTERING =====================
+    function getFiltered() {
+        const term = document.getElementById('searchInput').value.toLowerCase().trim();
+        const actionFilter = document.getElementById('actionFilter').value.toUpperCase().trim();
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+
+        return globalLogs.filter(log => {
+            // Search
+            if (term && !(
+                log.username.toLowerCase().includes(term) ||
+                log.action.toLowerCase().includes(term) ||
+                log.details.toLowerCase().includes(term) ||
+                log.device_name.toLowerCase().includes(term) ||
+                log.ip.toLowerCase().includes(term)
+            )) return false;
+
+            // Action
+            if (actionFilter) {
+                const logAction = (log.action || '').toUpperCase().trim();
+                if (!logAction.includes(actionFilter) && !actionFilter.includes(logAction)) return false;
+            }
+
+            // Date range
+            if ((dateFrom || dateTo) && log.timestamp && log.timestamp !== 'N/A') {
+                const logDateStr = log.timestamp.split(' ')[0];
+                if (dateFrom && logDateStr < dateFrom) return false;
+                if (dateTo && logDateStr > dateTo) return false;
+            } else if ((dateFrom || dateTo) && (!log.timestamp || log.timestamp === 'N/A')) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    // ===================== ACTIVE FILTER TAGS =====================
+    function renderActiveFilterTags() {
+        const container = document.getElementById('activeFilters');
+        container.innerHTML = '';
+        const filters = [
+            { id: 'searchInput', label: 'Search', isInput: true },
+            { id: 'actionFilter', label: 'Action' },
+            { id: 'dateFrom', label: 'From', isInput: true },
+            { id: 'dateTo', label: 'To', isInput: true },
+        ];
+        filters.forEach(f => {
+            const el = document.getElementById(f.id);
+            const val = el.value;
+            if (!val) return;
+            const displayVal = (f.map && f.map[val]) ? f.map[val] : val;
+            const tag = document.createElement('div');
+            tag.className = 'filter-tag';
+            tag.innerHTML = `<strong>${f.label}:</strong> ${displayVal} <button onclick="clearFilter('${f.id}')" title="Remove">&times;</button>`;
+            container.appendChild(tag);
+        });
+    }
+
+    function clearFilter(id) {
+        document.getElementById(id).value = '';
+        currentPage = 1;
+        renderTable();
+        renderActiveFilterTags();
+    }
+
+    function clearAllFilters() {
+        ['searchInput', 'actionFilter', 'dateFrom', 'dateTo'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        currentPage = 1;
+        renderTable();
+        renderActiveFilterTags();
+    }
+
+    // ===================== RENDER TABLE =====================
+    function renderTable() {
+        const tbody = document.getElementById('audit-tbody');
+        tbody.innerHTML = '';
+
+        let filtered = getFiltered();
+
+        // Sort
+        if (currentSortCol) {
+            filtered.sort((a, b) => {
+                let valA = String(a[currentSortCol]).toLowerCase();
+                let valB = String(b[currentSortCol]).toLowerCase();
+                // Numeric-aware sort for timestamps
+                if (currentSortCol === 'timestamp') {
+                    valA = a.timestamp || '';
+                    valB = b.timestamp || '';
+                }
+                if (valA < valB) return sortAscending ? -1 : 1;
+                if (valA > valB) return sortAscending ? 1 : -1;
+                return 0;
+            });
+        }
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const paginatedData = filtered.slice(startIndex, startIndex + itemsPerPage);
+        const endDisplay = Math.min(startIndex + itemsPerPage, totalItems);
+
+        document.getElementById('pageInfo').innerText =
+            `Showing ${totalItems === 0 ? 0 : startIndex + 1}–${endDisplay} of ${totalItems} entries`;
+
+        renderPagination(totalPages);
+
+        if (paginatedData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                <i data-lucide="search-x" style="margin-bottom:8px; opacity:0.5; width:32px; height:32px; display:block; margin:0 auto 8px;"></i>
+                No matching records found.</td></tr>`;
+            lucide.createIcons();
+            return;
+        }
+
+        paginatedData.forEach(log => {
+            let tsDate = log.timestamp; let tsTime = '';
+            if (log.timestamp !== 'N/A') {
+                const parts = log.timestamp.split(' ');
+                tsDate = parts[0];
+                tsTime = parts.length > 1 ? parts[1] : '';
+            }
+
+            const initial = log.username.charAt(0).toLowerCase();
+            const avCls = avMap[initial] || 'av-gray';
+
+            const actUpper = log.action.toUpperCase().trim(); // Trim added for exact matching
+            let badgeCls = 'badge-info'; // Default remains blue
+
+            // GREEN - Prioritize REGISTERED and SUCCESS
+            if (actUpper === 'REGISTER' || actUpper.includes('SUCCESS') || actUpper.includes('ADDED')) {
+                badgeCls = 'badge-success'; 
+            } 
+            // RED - DELETE / DELETED
+            else if (actUpper.includes('DELETE') || actUpper.includes('FAILED') || actUpper.includes('DENIED')) {
+                badgeCls = 'badge-danger'; 
+            } 
+            // YELLOW - UPDATE / UPDATED
+            else if (actUpper.includes('UPDATE') || actUpper.includes('EDITED')) {
+                badgeCls = 'badge-warning'; 
+            } 
+
+            const isDevice = log.type === 'DEVICE' && log.device_id;
+            let deviceHtml = `<span style="color:var(--text-muted); opacity:0.5;">—</span>`;
+            if (log.device_name) {
+                deviceHtml = `
+                    <div class="device-wrap">
+                        <div class="device-info">
+                            <div class="device-name">${log.device_name}</div>
+                            <div class="device-meta">${log.ip || 'Unknown IP'} &bull; ${log.branch || ''}</div>
+                        </div>
+                        ${isDevice ? '<i data-lucide="external-link" class="device-arrow"></i>' : ''}
+                    </div>`;
+            }
+
+            const tr = `
+                <tr>
+                    <td>
+                        <div class="ts-date">${tsDate}</div>
+                        <div class="ts-time">${tsTime}</div>
+                    </td>
+                    <td>
+                        <div class="user-chip">
+                            <span class="user-name">${log.username}</span>
+                        </div>
+                    </td>
+                    <td><span class="badge ${badgeCls}"><span class="badge-dot"></span>${log.action}</span></td>
+                    <td>
+                        <span class="detail-text" title="${log.details}">${log.details}</span>
+                    </td>
+                    <td ${isDevice ? `onclick="showDeviceModal('${log.device_id}')" style="cursor:pointer;"` : ''}>${deviceHtml}</td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', tr);
+        });
+        lucide.createIcons();
+    }
+
+    // ===================== PAGINATION =====================
+    function renderPagination(totalPages) {
+        const container = document.getElementById('paginationControls');
+        container.innerHTML = '';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.innerHTML = '<i data-lucide="chevron-left" style="width:14px;height:14px;"></i>';
+        prevBtn.onclick = () => { currentPage--; renderTable(); };
+        container.appendChild(prevBtn);
+
+        const range = getPageRange(currentPage, totalPages);
+        range.forEach(item => {
+            if (item === '...') {
+                const ellipsis = document.createElement('span');
+                ellipsis.style.cssText = 'padding:0 4px; color:var(--text-muted); align-self:center; font-size:0.875rem;';
+                ellipsis.textContent = '…';
+                container.appendChild(ellipsis);
+            } else {
+                const btn = document.createElement('button');
+                btn.className = 'page-num-btn' + (item === currentPage ? ' active' : '');
+                btn.textContent = item;
+                btn.onclick = () => { currentPage = item; renderTable(); };
+                container.appendChild(btn);
+            }
+        });
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn';
+        nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+        nextBtn.innerHTML = '<i data-lucide="chevron-right" style="width:14px;height:14px;"></i>';
+        nextBtn.onclick = () => { currentPage++; renderTable(); };
+        container.appendChild(nextBtn);
+
+        lucide.createIcons();
+    }
+
+    function getPageRange(current, total) {
+        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+        if (current <= 4) return [1, 2, 3, 4, 5, '...', total];
+        if (current >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+        return [1, '...', current - 1, current, current + 1, '...', total];
+    }
+
+    function changePageSize() {
+        itemsPerPage = parseInt(document.getElementById('pageSizeSelect').value);
+        currentPage = 1;
+        renderTable();
+    }
+
+    // ===================== SORT =====================
+    function sortTable(columnKey, iconIndex) {
+        if (currentSortCol === columnKey) sortAscending = !sortAscending;
+        else { currentSortCol = columnKey; sortAscending = true; }
+        currentPage = 1;
+        document.querySelectorAll('.sort-icon').forEach(icon => {
+            icon.setAttribute('data-lucide', 'chevrons-up-down');
+            icon.classList.remove('sort-active');
+        });
+        const activeIcon = document.getElementById('icon-' + iconIndex);
+        activeIcon.setAttribute('data-lucide', sortAscending ? 'chevron-up' : 'chevron-down');
+        activeIcon.classList.add('sort-active');
+        lucide.createIcons();
+        renderTable();
+    }
+
+    // ===================== EXPORT LOGIC =====================
+    function toggleExportMenu(e) {
+        e.stopPropagation();
+        document.getElementById('exportMenu').classList.toggle('open');
+    }
+
+    function csvField(val) {
+        const str = (val === null || val === undefined) ? '' : String(val);
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+
+    function exportData(format) {
+        document.getElementById('exportMenu').classList.remove('open');
+
+        const loadingModal = document.getElementById('exportLoadingModal');
+        loadingModal.style.display = 'flex';
+
+        let printWin = null;
+        if (format === 'print') {
+            printWin = window.open('', '_blank');
+            printWin.document.write('<html style="font-family:sans-serif; text-align:center; padding:50px;"><body><h2>Generating Document... Please wait.</h2></body></html>');
+        }
+
+        setTimeout(() => {
+            const filtered = getFiltered();
+
+            if (format === 'csv') {
+                const headers = ['No.', 'Date', 'Time', 'Username', 'Action', 'Details', 'Device Name', 'IP Address', 'Branch', 'Type'];
+                const rows = filtered.map((log, i) => {
+                    const parts = (log.timestamp && log.timestamp !== 'N/A') ? log.timestamp.split(' ') : ['', ''];
+                    const date = parts[0] || '';
+                    const time = parts[1] || '';
+                    return [
+                        csvField(i + 1), csvField(date), csvField(time), csvField(log.username),
+                        csvField(log.action), csvField(log.details), csvField(log.device_name),
+                        csvField(log.ip), csvField(log.branch), csvField(log.type),
+                    ].join(',');
+                });
+                const csv = [headers.map(csvField).join(','), ...rows].join('\r\n');
+                downloadFile(csv, 'audit_logs_' + getDateTag() + '.csv', 'text/csv;charset=utf-8;');
+                showToast('CSV exported — ' + filtered.length + ' records', 'success');
+            }
+            else if (format === 'json') {
+                const json = JSON.stringify(filtered, null, 2);
+                downloadFile(json, 'audit_logs_' + getDateTag() + '.json', 'application/json');
+                showToast('JSON exported — ' + filtered.length + ' records', 'success');
+            }
+            else if (format === 'print' && printWin) {
+                const tableRows = filtered.map((log, i) => {
+                    const parts = (log.timestamp && log.timestamp !== 'N/A') ? log.timestamp.split(' ') : ['—', ''];
+                    return `<tr>
+                        <td>${i + 1}</td>
+                        <td>${parts[0] || '—'}<br><small style="color:#888;">${parts[1] || ''}</small></td>
+                        <td>${log.username || '—'}</td>
+                        <td>${log.action || '—'}</td>
+                        <td>${log.details || '—'}</td>
+                        <td>${log.device_name || '—'}</td>
+                        <td>${log.ip || '—'}</td>
+                        <td>${log.branch || '—'}</td>
+                    </tr>`;
+                }).join('');
+
+                printWin.document.open();
+                printWin.document.write(`
+                    <html><head><title>Audit Logs</title>
+                    <style>
+                        body{font-family:sans-serif;font-size:12px;padding:20px;color:#111;}
+                        h2{margin:0 0 4px;font-size:18px;}
+                        .meta{margin:0 0 16px;color:#666;font-size:11px;}
+                        table{width:100%;border-collapse:collapse;}
+                        th{background:#f3f4f6;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb;}
+                        td{padding:7px 10px;border-bottom:1px solid #e5e7eb;vertical-align:top;}
+                        tr:nth-child(even) td{background:#f9fafb;}
+                        .print-btn{margin-bottom:14px;padding:7px 18px;cursor:pointer;background:#111;color:#fff;border:none;border-radius:6px;font-size:13px;}
+                        @media print{.print-btn{display:none;} body{padding:10px;}}
+                    </style></head><body>
+                    <h2>System Audit Logs</h2>
+                    <p class="meta">Exported: ${new Date().toLocaleString()} &nbsp;|&nbsp; ${filtered.length} record(s)</p>
+                    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+                    <table>
+                        <thead><tr><th>#</th><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th><th>Device</th><th>IP</th><th>Branch</th></tr></thead>
+                        <tbody>${tableRows}</tbody>
+                    </table></body></html>`);
+                printWin.document.close();
+                showToast('Print window prepared', 'success');
+            }
+
+            loadingModal.style.display = 'none';
+
+        }, 3000);
+    }
+
+    function downloadFile(content, filename, mimeType) {
+        try {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+        } catch (e) {
+            const encoded = encodeURIComponent(content);
+            const a = document.createElement('a');
+            a.href = 'data:' + mimeType + ',' + encoded;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    }
+
+    function getDateTag() {
+        return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    }
+
+    // ===================== DEVICE MODAL =====================
+    function showDeviceModal(deviceId) {
+        if (!deviceId || deviceId === 'None') return;
+        const overlay = document.getElementById('deviceModal');
+        const body = document.getElementById('modalBody');
+        const title = document.getElementById('modalTitle');
+        title.textContent = 'Loading Device...';
+        body.innerHTML = '<div class="spinner-container"><div class="spinner-ring"></div></div>';
+        overlay.style.display = 'flex';
+
+        fetch('/audit-logs/device/' + encodeURIComponent(deviceId))
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    body.innerHTML = `<div style="padding:24px;color:var(--red-text);"><i data-lucide="alert-circle" style="display:inline;margin-bottom:-4px;"></i> ${data.error}</div>`;
+                    title.textContent = 'Connection Error';
+                    lucide.createIcons();
+                    return;
+                }
+                title.textContent = data.device_name || `Terminal #${deviceId}`;
+                body.innerHTML = `
+                    <div class="modal-row"><span class="modal-row-label">Branch</span><span class="modal-row-val"><strong>${data.chain_type || '—'}</strong></span></div>
+                    <div class="modal-row"><span class="modal-row-label">IP Address</span><span class="modal-row-val"><code>${data.ip_address || '—'}</code></span></div>
+                    <div class="modal-row"><span class="modal-row-label">Location Code</span><span class="modal-row-val">${data.bcc || '—'}</span></div>`;
+            })
+            .catch(() => {
+                body.innerHTML = `<div style="padding:24px;color:var(--red-text);">Failed to load device data.</div>`;
+                title.textContent = 'Network Error';
+            });
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+        }
+    });
+
+    // ===================== TOAST =====================
+    function showToast(message, type = '') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type ? 'toast-' + type : ''}`;
+        const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info';
+        toast.innerHTML = `<i data-lucide="${icon}"></i> ${message}`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        setTimeout(() => toast.remove(), 3000);
+    }
+</script>
+{% endblock %}

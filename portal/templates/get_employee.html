@@ -1,0 +1,989 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
+<style>
+    /* --- Shared Variables --- */
+    :root {
+        --bg-page: #f3f4f6;
+        --bg-surface: #ffffff;
+        --bg-muted: #f9fafb;
+        --bg-hover: #f3f4f6;
+        --border: #e5e7eb;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --text-muted: #9ca3af;
+        --blue-bg: #eff6ff;
+        --blue-text: #1d4ed8;
+        --green-bg: #f0fdf4;
+        --green-text: #15803d;
+        --red-bg: #fef2f2;
+        --red-text: #b91c1c;
+        --yellow-bg: #fffbeb;
+        --yellow-text: #b45309;
+        --eggshell: #f0ead6;
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --bento-radius: 20px;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* --- Light Bento Grid Theme --- */
+    .bento-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto 2rem auto;
+    }
+
+    .bento-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--bento-radius);
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bento-panel:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    /* --- Animations --- */
+    @keyframes popIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .pop-in-container {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .stagger-1 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.1s;
+        opacity: 0;
+    }
+
+    .stagger-2 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
+
+    /* --- Base Layout --- */
+    .manager-wrapper {
+        flex: 1;
+        width: 100%;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .welcome-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .welcome-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    /* --- Table Layouts --- */
+    .table-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+
+    .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .audit-table thead th {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 12px 16px;
+        text-align: left;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .audit-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background .1s;
+    }
+
+    .audit-table tbody tr:nth-child(even) {
+        background-color: var(--bg-muted);
+    }
+
+    .audit-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .audit-table tbody tr:hover td {
+        background: var(--bg-hover);
+    }
+
+    .audit-table tbody td {
+        padding: 12px 16px;
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    /* --- Badges & Buttons --- */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+
+    .badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .badge-rustans {
+        background: var(--yellow-bg);
+        color: var(--yellow-text);
+    }
+
+    .badge-rustans .badge-dot {
+        background: var(--yellow-text);
+    }
+
+    .badge-rds {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+    }
+
+    .badge-rds .badge-dot {
+        background: var(--blue-text);
+    }
+
+    .badge-active {
+        background: var(--green-bg);
+        color: var(--green-text);
+    }
+
+    .badge-active .badge-dot {
+        background: var(--green-text);
+    }
+
+    .badge-neutral {
+        background: var(--bg-muted);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        transition: background .15s;
+    }
+
+    .btn:hover {
+        background: var(--bg-muted);
+    }
+
+    .btn-connect {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: #bfdbfe;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 6px 12px;
+    }
+
+    .btn-connect:hover {
+        background: #dbeafe;
+    }
+
+    .action-btn {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        padding: 6px 12px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .action-btn:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+    }
+
+    .action-btn i {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* --- Search & Pagination --- */
+    .search-wrapper {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        width: 16px;
+        height: 16px;
+    }
+
+    .search-input {
+        padding: 8px 12px 8px 34px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 0.8125rem;
+        outline: none;
+        width: 250px;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .search-input:focus {
+        border-color: var(--blue-text);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        border-top: 1px solid var(--border);
+        background: var(--bg-surface);
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* --- Modal --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        /* FIX: Boosted z-index to aggressively override base.html header */
+        z-index: 99999;
+    }
+
+    .modal-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--bento-radius);
+        width: 650px;
+        max-width: 90%;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modal-head {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg-surface);
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+        color: var(--text-primary);
+    }
+
+    .modal-body {
+        padding: 24px;
+        max-height: 500px;
+        overflow-y: auto;
+        background: var(--bg-surface);
+    }
+
+    /* --- Simple Logs Table --- */
+    .simple-log-table {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .log-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        background: var(--bg-muted);
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+
+    .log-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.8125rem;
+        align-items: center;
+        transition: background .1s;
+    }
+
+    .log-row:hover {
+        background: var(--bg-hover);
+    }
+
+    .log-row:last-child {
+        border-bottom: none;
+    }
+
+    .log-type.in {
+        color: var(--green-text);
+        font-weight: 600;
+    }
+
+    .log-type.out {
+        color: var(--red-text);
+        font-weight: 600;
+    }
+
+    /* Animations */
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .lucide-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    .slide-next {
+        animation: slideInRight 0.25s ease-out forwards;
+    }
+
+    .slide-prev {
+        animation: slideInLeft 0.25s ease-out forwards;
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes tableUpdate {
+        0% {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-update {
+        animation: tableUpdate 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+</style>
+
+<div class="manager-wrapper">
+    <div class="bento-layout">
+
+        <div class="bento-panel stagger-1"
+            style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+            <h2 class="welcome-title">Terminal Synchronization</h2>
+            <p class="welcome-subtitle" id="header-subtitle">Select a device to view enrolled staff and live attendance
+                logs.</p>
+        </div>
+
+        <div class="view-section stagger-2" id="view-devices">
+            <div class="bento-panel" style="padding: 0; overflow: hidden;">
+                <div
+                    style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                    <h3 class="table-title"><i data-lucide="server"></i> Available Devices</h3>
+                    <div class="search-wrapper">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="deviceSearch" class="search-input"
+                            placeholder="Search devices by name, IP..." onkeyup="filterDevices()">
+                    </div>
+                </div>
+
+                <table class="audit-table" id="deviceTable">
+                    <thead>
+                        <tr>
+                            <th>Device Name</th>
+                            <th style="width: 150px;">Chain</th>
+                            <th style="width: 200px;">IP Address</th>
+                            <th style="width: 120px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="device-tbody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 3rem;"><i data-lucide="loader-2"
+                                    class="lucide-spin"></i> Loading devices...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="view-section" id="view-employees" style="display: none;">
+            <div class="bento-panel" style="padding: 0; overflow: hidden;">
+                <div
+                    style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                    <h3 class="table-title"><i data-lucide="users"></i> Device Roster: <span id="selected-device-name"
+                            style="color: var(--blue-text); margin-left: 8px;"></span></h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <div class="search-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="employeeSearch" class="search-input"
+                                placeholder="Search ID or Name..." onkeyup="filterEmployees()">
+                        </div>
+                        <button class="btn" onclick="backToDevices()">
+                            <i data-lucide="arrow-left"></i> Disconnect
+                        </button>
+                    </div>
+                </div>
+
+                <table class="audit-table" id="employeeTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Emp ID</th>
+                            <th>Employee Name</th>
+                            <th style="width: 150px;">Status</th>
+                            <th style="width: 150px; text-align: right;">Attendance Logs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employee-tbody">
+                    </tbody>
+                </table>
+                <div class="pagination-container">
+                    <span id="emp-page-info">Showing 0 to 0 of 0 entries</span>
+                    <div class="pagination-controls">
+                        <button class="btn" id="emp-prev-btn" onclick="changeEmpPage(-1)"><i
+                                data-lucide="chevron-left"></i> Prev</button>
+                        <button class="btn" id="emp-next-btn" onclick="changeEmpPage(1)">Next <i
+                                data-lucide="chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="logs-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container">
+        <div class="modal-head">
+            <span id="modal-emp-name">Attendance Logs</span>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button id="exportLogsBtn" class="btn btn-connect" style="display: none; padding: 4px 10px;"
+                    onclick="exportCurrentLogs()">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i> Export
+                </button>
+                <button class="modal-close" onclick="closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+        </div>
+        <div class="modal-body" id="modal-logs-container">
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentDeviceId = null;
+
+    // Pagination & Search State
+    let globalEmployeeData = [];
+    let filteredEmployeeData = [];
+    let currentEmpPage = 1;
+    const empRowsPerPage = 20;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        lucide.createIcons();
+        loadDevices();
+    });
+
+    // --- Load Devices ---
+    function loadDevices() {
+        fetch('/api/fetch-devices')
+            .then(response => response.json())
+            .then(res => {
+                const tbody = document.getElementById('device-tbody');
+                tbody.innerHTML = '';
+
+                if (res.status === 'success') {
+                    if (res.data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">No devices found in database.</td></tr>`;
+                        return;
+                    }
+
+                    res.data.forEach(device => {
+                        let badgeClass = 'badge-neutral';
+                        if (device.chain_type === 'RUSTANS') badgeClass = 'badge-rustans';
+                        else if (device.chain_type === 'RDS') badgeClass = 'badge-rds';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>${device.bcc}</strong></td>
+                            <td><span class="badge ${badgeClass}"><span class="badge-dot"></span>${device.chain_type}</span></td>
+                            <td style="font-family: monospace; color: var(--text-secondary);">${device.ip_address}</td>
+                            <td style="text-align: right;">
+                                <button class="btn-connect" onclick="connectToDevice('${device.device_id}', '${device.bcc}')">
+                                    <i data-lucide="wifi"></i> <span>Connect</span>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    lucide.createIcons();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--red-text);">Error: ${res.message}</td></tr>`;
+                }
+            })
+            .catch(err => console.error("Fetch error:", err));
+    }
+
+    // --- Switch Views (Master/Detail) ---
+    function connectToDevice(deviceId, bcc) {
+        currentDeviceId = deviceId;
+        document.getElementById('view-devices').style.display = 'none';
+
+        const empView = document.getElementById('view-employees');
+        empView.style.display = 'block';
+        empView.classList.add('pop-in-container');
+
+        document.getElementById('selected-device-name').innerText = bcc;
+        document.getElementById('header-subtitle').innerText = "Live connection active. Managing terminal data.";
+
+        loadEmployees(deviceId);
+    }
+
+    function backToDevices() {
+        currentDeviceId = null;
+        document.getElementById('view-employees').style.display = 'none';
+        document.getElementById('view-employees').classList.remove('pop-in-container');
+
+        const devView = document.getElementById('view-devices');
+        devView.style.display = 'block';
+        devView.classList.add('pop-in-container');
+
+        document.getElementById('header-subtitle').innerText = "Select a device to view enrolled staff and live attendance logs.";
+    }
+
+    // --- Device Search Logic ---
+    function filterDevices() {
+        const term = document.getElementById('deviceSearch').value.toLowerCase();
+        const tbody = document.getElementById('device-tbody');
+        const rows = tbody.querySelectorAll('tr');
+
+        tbody.classList.remove('animate-update');
+        void tbody.offsetWidth;
+        tbody.classList.add('animate-update');
+
+        rows.forEach(row => {
+            if (row.cells.length === 1) return;
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(term) ? '' : 'none';
+        });
+    }
+
+    // --- Load Employees ---
+    function loadEmployees(deviceId) {
+        const tbody = document.getElementById('employee-tbody');
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem;"><i data-lucide="loader-2" class="lucide-spin"></i> Establishing hardware connection and syncing...</td></tr>`;
+        lucide.createIcons();
+        document.getElementById('employeeSearch').value = '';
+
+        const formData = new FormData();
+        formData.append('device_id', deviceId);
+
+        fetch('/api/fetch-employees', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    globalEmployeeData = res.data;
+                    filteredEmployeeData = [...globalEmployeeData];
+                    currentEmpPage = 1;
+                    renderEmployeeTable();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--red-text);"><strong>Connection Failed:</strong> ${res.message}</td></tr>`;
+                    updatePaginationInfo(0);
+                }
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--red-text);"><strong>Error:</strong> Failed to fetch employee data.</td></tr>`;
+                console.error(err);
+            });
+    }
+
+    function renderEmployeeTable() {
+        const tbody = document.getElementById('employee-tbody');
+        tbody.innerHTML = '';
+
+        if (filteredEmployeeData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">No employees found.</td></tr>`;
+            updatePaginationInfo(0);
+            return;
+        }
+
+        const startIndex = (currentEmpPage - 1) * empRowsPerPage;
+        const endIndex = startIndex + empRowsPerPage;
+        const pageData = filteredEmployeeData.slice(startIndex, endIndex);
+
+        pageData.forEach(emp => {
+            const cleanDisplayName = emp.name.replace(/\./g, ' ');
+            const safeName = cleanDisplayName.replace(/'/g, "\\'");
+
+            const tr = `
+                <tr>
+                    <td style="font-family: monospace; color: var(--text-secondary);">${emp.id}</td>
+                    <td><strong style="color: var(--text-primary);">${cleanDisplayName}</strong></td>
+                    <td><span class="badge badge-active"><span class="badge-dot"></span>${emp.status || 'Enrolled'}</span></td>
+                    <td style="text-align: right;">
+                        <button class="action-btn" onclick="openLogsModal('${safeName}', '${emp.id}')">
+                            <i data-lucide="clock"></i> View Logs
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', tr);
+        });
+        lucide.createIcons();
+        updatePaginationInfo(filteredEmployeeData.length);
+    }
+
+    function filterEmployees() {
+        const term = document.getElementById('employeeSearch').value.toLowerCase();
+        filteredEmployeeData = globalEmployeeData.filter(emp =>
+            emp.name.toLowerCase().includes(term) ||
+            emp.id.toString().toLowerCase().includes(term)
+        );
+
+        currentEmpPage = 1;
+        const tbody = document.getElementById('employee-tbody');
+        tbody.classList.remove('slide-next', 'slide-prev', 'animate-update');
+        void tbody.offsetWidth;
+        tbody.classList.add('animate-update');
+        renderEmployeeTable();
+    }
+
+    function changeEmpPage(delta) {
+        currentEmpPage += delta;
+        const tbody = document.getElementById('employee-tbody');
+        tbody.classList.remove('slide-next', 'slide-prev', 'animate-update');
+        void tbody.offsetWidth;
+
+        if (delta > 0) tbody.classList.add('slide-next');
+        else tbody.classList.add('slide-prev');
+
+        renderEmployeeTable();
+    }
+
+    function updatePaginationInfo(totalItems) {
+        const totalPages = Math.ceil(totalItems / empRowsPerPage) || 1;
+        const startRange = totalItems === 0 ? 0 : ((currentEmpPage - 1) * empRowsPerPage) + 1;
+        const endRange = Math.min(currentEmpPage * empRowsPerPage, totalItems);
+
+        document.getElementById('emp-page-info').innerText = `Showing ${startRange} to ${endRange} of ${totalItems} entries`;
+
+        const prevBtn = document.getElementById('emp-prev-btn');
+        const nextBtn = document.getElementById('emp-next-btn');
+
+        if (currentEmpPage === 1) {
+            prevBtn.setAttribute('disabled', 'true');
+            prevBtn.style.opacity = '0.5';
+            prevBtn.style.cursor = 'not-allowed';
+        } else {
+            prevBtn.removeAttribute('disabled');
+            prevBtn.style.opacity = '1';
+            prevBtn.style.cursor = 'pointer';
+        }
+
+        if (currentEmpPage >= totalPages) {
+            nextBtn.setAttribute('disabled', 'true');
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'not-allowed';
+        } else {
+            nextBtn.removeAttribute('disabled');
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+        }
+    }
+
+    // --- Load Live Logs & Export ---
+    let currentExportData = [];
+    let currentExportFilename = "attendance.csv";
+
+    function openLogsModal(name, id) {
+        const cleanName = name.replace(/\./g, ' ');
+        document.getElementById('modal-emp-name').innerText = `Logs: ${cleanName} (${id})`;
+        document.getElementById('exportLogsBtn').style.display = 'none';
+
+        const container = document.getElementById('modal-logs-container');
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 1rem;">
+                <i data-lucide="loader-2" class="lucide-spin" style="width: 32px; height: 32px; color: var(--blue-text); margin-bottom: 12px;"></i>
+                <span style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">Fetching live logs from terminal...</span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;">This might take a few seconds depending on the connection.</span>
+            </div>
+        `;
+
+        document.getElementById('logs-modal').style.display = 'flex';
+        lucide.createIcons();
+
+        const formData = new FormData();
+        formData.append('device_id', currentDeviceId);
+        formData.append('emp_id', id);
+
+        fetch('/api/fetch-logs', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(res => {
+                container.innerHTML = '';
+                if (res.status === 'success') {
+                    if (res.data.length === 0) {
+                        container.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-muted);">No attendance records found for this employee.</div>`;
+                        return;
+                    }
+
+                    // Reset Export Data Array
+                    currentExportData = [
+                        ["Employee Name", "Employee ID", "Date", "Time In", "Time Out"] // Headers
+                    ];
+                    currentExportFilename = `Attendance_${cleanName.replace(/\s+/g, '_')}_${id}.csv`;
+
+                    const timeToMinutes = (timeStr) => {
+                        let str = String(timeStr).trim().toUpperCase();
+                        let modifier = '';
+                        if (str.includes('AM')) modifier = 'AM';
+                        else if (str.includes('PM')) modifier = 'PM';
+
+                        str = str.replace('AM', '').replace('PM', '').trim();
+                        let [hours, minutes] = str.split(':');
+                        hours = parseInt(hours, 10) || 0;
+                        minutes = parseInt(minutes, 10) || 0;
+
+                        if (modifier === 'PM' && hours < 12) hours += 12;
+                        if (modifier === 'AM' && hours === 12) hours = 0;
+
+                        return (hours * 60) + minutes;
+                    };
+
+                    const logsByDate = {};
+
+                    res.data.forEach(log => {
+                        const d = log.date;
+                        const t = log.time;
+
+                        if (!d || !t) return;
+
+                        const timeInMins = timeToMinutes(t);
+
+                        if (!logsByDate[d]) {
+                            logsByDate[d] = { min: timeInMins, max: timeInMins };
+                        } else {
+                            if (timeInMins < logsByDate[d].min) logsByDate[d].min = timeInMins;
+                            if (timeInMins > logsByDate[d].max) logsByDate[d].max = timeInMins;
+                        }
+                    });
+
+                    let html = `
+                <div class="simple-log-table">
+                    <div class="log-header">
+                        <div>Date</div>
+                        <div>Time In</div>
+                        <div>Time Out</div>
+                    </div>
+                `;
+
+                    const sortedDates = Object.keys(logsByDate).sort((a, b) => new Date(b) - new Date(a));
+
+                    const formatFromMinutes = (mins) => {
+                        if (mins === null) return '--';
+                        let h = Math.floor(mins / 60);
+                        let m = mins % 60;
+                        const ampm = h >= 12 ? 'PM' : 'AM';
+                        h = h % 12 || 12;
+                        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
+                    };
+
+                    const formatDate = (dateStr) => {
+                        const d = new Date(dateStr.replace(/-/g, '\/'));
+                        if (isNaN(d)) return dateStr;
+                        return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    };
+
+                    sortedDates.forEach(date => {
+                        let minVal = logsByDate[date].min;
+                        let maxVal = logsByDate[date].max;
+
+                        if (minVal === maxVal) maxVal = null;
+
+                        const displayDate = formatDate(date);
+                        const displayIn = formatFromMinutes(minVal);
+                        const displayOut = formatFromMinutes(maxVal);
+
+                        // Capture Data for Export
+                        currentExportData.push([
+                            cleanName,
+                            id,
+                            displayDate.replace(/,/g, ''),
+                            displayIn,
+                            displayOut
+                        ]);
+
+                        html += `
+                    <div class="log-row">
+                        <div style="font-weight: 500; display: flex; align-items: center; gap: 6px; color: var(--text-primary);">
+                            <i data-lucide="calendar" style="width:14px; color: var(--text-secondary);"></i> ${displayDate}
+                        </div>
+                        <div class="log-type in" style="font-family: monospace;">${displayIn}</div>
+                        <div class="log-type ${maxVal !== null ? 'out' : ''}" style="font-family: monospace;">${displayOut}</div>
+                    </div>
+                    `;
+                    });
+
+                    html += '</div>';
+                    container.innerHTML = html;
+
+                    document.getElementById('exportLogsBtn').style.display = 'flex';
+                    lucide.createIcons();
+
+                } else {
+                    container.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--red-text);">Failed to load logs: ${res.message}</div>`;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                container.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--red-text);">A network error occurred while fetching logs.</div>`;
+            });
+    }
+
+    function exportCurrentLogs() {
+        if (!currentExportData || currentExportData.length <= 1) return;
+
+        let csvContent = currentExportData.map(row => row.map(val => `"${val}"`).join(",")).join("\n");
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute("href", url);
+        link.setAttribute("download", currentExportFilename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function closeModal() {
+        document.getElementById('logs-modal').style.display = 'none';
+    }
+</script>
+{% endblock %}

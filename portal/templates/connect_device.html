@@ -1,0 +1,951 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
+<style>
+    /* --- Audit Logs Shared Variables --- */
+    :root {
+        --bg-page: #f3f4f6;
+        --bg-surface: #ffffff;
+        --bg-muted: #f9fafb;
+        --bg-hover: #f3f4f6;
+        --border: #e5e7eb;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --text-muted: #9ca3af;
+        --blue-bg: #eff6ff;
+        --blue-text: #1d4ed8;
+        --green-bg: #f0fdf4;
+        --green-text: #15803d;
+        --red-bg: #fef2f2;
+        --red-text: #b91c1c;
+        --yellow-bg: #fffbeb;
+        --yellow-text: #b45309;
+        --eggshell: #f0ead6;
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --bento-radius: 20px;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* --- Light Bento Grid Theme --- */
+    .bento-layout {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto 2rem auto;
+    }
+
+    .bento-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--bento-radius);
+        box-shadow: var(--shadow-sm);
+        padding: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bento-panel:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    .span-full {
+        grid-column: 1 / -1;
+    }
+
+    /* --- Pop-In Animation --- */
+    @keyframes popIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .pop-in-container {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .stagger-1 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.1s;
+        opacity: 0;
+    }
+
+    .stagger-2 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
+
+    /* --- Inline Alerts --- */
+    .alert-box {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        animation: popIn 0.3s ease forwards;
+    }
+
+    .alert-error {
+        background: var(--red-bg);
+        color: var(--red-text);
+        border: 1px solid #fecaca;
+    }
+
+    .alert-success {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border: 1px solid #bbf7d0;
+    }
+
+    /* --- Manager Layout --- */
+    .manager-wrapper {
+        flex: 1;
+        width: 100%;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .welcome-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .welcome-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    /* --- Toolbar (Search & Buttons) --- */
+    .search-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        width: 16px;
+        height: 16px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 8px 12px 8px 34px;
+        font-size: 0.875rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .search-input:focus {
+        border-color: var(--blue-text);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
+    /* --- Buttons --- */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        transition: background .15s;
+    }
+
+    .btn:hover:not(:disabled) {
+        background: var(--bg-muted);
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-primary {
+        background: var(--text-primary);
+        color: var(--bg-surface);
+        border-color: transparent;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: #1f2937;
+    }
+
+    .btn-add {
+        background: var(--eggshell);
+        color: #374151;
+        border-color: #d1c8b3;
+        box-shadow: var(--shadow-sm);
+        font-weight: 600;
+    }
+
+    .btn-add:hover {
+        background: #e3ddc8;
+    }
+
+    /* --- Table Card --- */
+    .table-container {
+        width: 100%;
+        max-width: 1200px;
+    }
+
+    .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .audit-table thead th {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 12px 16px;
+        text-align: left;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+    }
+
+    .audit-table thead th:hover {
+        background: var(--bg-muted);
+        color: var(--text-primary);
+    }
+
+    .th-content {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .sort-icon {
+        width: 14px;
+        height: 14px;
+        opacity: 0.3;
+    }
+
+    .sort-active {
+        opacity: 1;
+        color: var(--blue-text);
+    }
+
+    /* Zebra Striping */
+    .audit-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background .1s;
+    }
+
+    .audit-table tbody tr:nth-child(even) {
+        background-color: var(--bg-muted);
+    }
+
+    .audit-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .audit-table tbody tr:hover td {
+        background: #f3f4f6;
+    }
+
+    .audit-table tbody td {
+        padding: 12px 16px;
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    /* --- Pagination Wrapper --- */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-surface);
+    }
+
+    .page-info {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* --- Typography & Badges --- */
+    .device-name {
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+    }
+
+    .device-ip {
+        font-family: ui-monospace, monospace;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+
+    .badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .badge-rustans {
+        background: var(--yellow-bg);
+        color: var(--yellow-text);
+    }
+
+    .badge-rustans .badge-dot {
+        background: var(--yellow-text);
+    }
+
+    .badge-rds {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+    }
+
+    .badge-rds .badge-dot {
+        background: var(--blue-text);
+    }
+
+    .badge-neutral {
+        background: var(--bg-muted);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+    }
+
+    .badge-neutral .badge-dot {
+        background: var(--text-muted);
+    }
+
+    /* --- Action Buttons --- */
+    .action-btn {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        padding: 6px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .action-btn:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+    }
+
+    .action-btn.danger:hover {
+        background: var(--red-bg);
+        color: var(--red-text);
+        border-color: #fecaca;
+    }
+
+    .action-btn i {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* --- Modal --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        width: 450px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modal-head {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 14px;
+        font-size: 0.875rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        outline: none;
+        transition: border-color .15s;
+    }
+
+    .form-input:focus {
+        border-color: var(--blue-text);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
+    .modal-foot {
+        padding: 16px 24px;
+        background: var(--bg-muted);
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    /* --- Hold to Delete Button --- */
+    .btn-danger {
+        background: var(--red-bg);
+        color: var(--red-text) !important;
+        /* Force dark red text */
+        border: 1px solid #fecaca;
+        position: relative;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+        transition: transform 0.1s ease;
+        font-weight: 600;
+        /* Extra weight helps legibility */
+    }
+
+    .btn-danger:hover {
+        background: #fef2f2;
+    }
+
+    .hold-progress {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        /* Increased opacity from 0.2 to 0.4 for better visibility */
+        background: rgba(220, 38, 38, 0.4);
+        width: 0%;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .btn-danger span {
+        position: relative;
+        z-index: 10;
+    }
+</style>
+
+<div class="manager-wrapper">
+
+    <div class="bento-layout">
+
+        <div class="bento-panel stagger-1" style="display: flex; flex-direction: column; justify-content: center;">
+            <h2 class="welcome-title">Device Manager</h2>
+            <p class="welcome-subtitle">Monitor ZKTeco devices across all branches.</p>
+        </div>
+
+        <div class="bento-panel stagger-2"
+            style="display: flex; flex-direction: column; justify-content: center; gap: 1rem; min-width: 350px;">
+            <div class="search-wrapper">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="Search devices, locations, IPs...">
+            </div>
+            <button class="btn btn-add" onclick="openModal()" style="width: 100%; justify-content: center;">
+                <i data-lucide="plus"></i> Add Device
+            </button>
+        </div>
+
+        <div class="table-container pop-in-container stagger-2 span-full">
+            <div id="page-alert" class="alert-box"></div>
+
+            <div class="bento-panel" style="padding: 0; overflow: hidden;">
+                <table class="audit-table" id="deviceTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('bcc', 0)">
+                                <div class="th-content">Device Name <i data-lucide="chevrons-up-down" class="sort-icon"
+                                        id="icon-0"></i></div>
+                            </th>
+                            <th style="width: 150px;" onclick="sortTable('chain_type', 1)">
+                                <div class="th-content">Location <i data-lucide="chevrons-up-down" class="sort-icon"
+                                        id="icon-1"></i></div>
+                            </th>
+                            <th style="width: 200px;" onclick="sortTable('ip_address', 2)">
+                                <div class="th-content">IP Address <i data-lucide="chevrons-up-down" class="sort-icon"
+                                        id="icon-2"></i></div>
+                            </th>
+                            <th style="width: 120px; text-align: right; cursor: default;">
+                                <div class="th-content" style="justify-content: flex-end;">Actions</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="device-tbody">
+                    </tbody>
+                </table>
+
+                <div class="pagination-wrapper">
+                    <div class="page-info" id="pageInfo">Showing 0 to 0 of 0 entries</div>
+                    <div class="pagination-controls">
+                        <button class="btn" id="btnPrev" onclick="changePage(-1)">Previous</button>
+                        <button class="btn" id="btnNext" onclick="changePage(1)">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="device-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container bento-panel" style="padding: 0;">
+        <div class="modal-head">
+            Device Configuration
+        </div>
+        <form id="device-form">
+            <div class="modal-body">
+                <div id="modal-alert" class="alert-box"></div>
+                <input type="hidden" id="device_id" name="device_id">
+
+                <div class="form-group">
+                    <label class="form-label">Device Name</label>
+                    <input type="text" id="bcc" name="bcc" placeholder="e.g. MAKATI" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">IP Address</label>
+                    <input type="text" id="ip_address" name="ip_address" placeholder="192.168.1.201" class="form-input"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Device Key (Default Password is "0")</label>
+                    <input type="text" id="comms_key" name="comms_key" placeholder="Default: 0" class="form-input"
+                        value="0">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" id="chain_type" name="chain_type" placeholder="Makati HQ" class="form-input"
+                        required>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Device</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="delete-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container bento-panel" style="width: 400px; text-align: center; padding: 2rem;">
+        <div style="color: var(--red-text); margin-bottom: 1rem; display: flex; justify-content: center;">
+            <i data-lucide="alert-triangle" style="width: 48px; height: 48px;"></i>
+        </div>
+        <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Delete
+            Terminal?</h3>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+            This action cannot be undone. You are about to remove <strong id="delete-target-name"
+                style="color: var(--text-primary);"></strong>.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" class="btn" onclick="closeDeleteModal()">Cancel</button>
+            <button type="button" id="hold-delete-btn" class="btn btn-danger">
+                <div class="hold-progress" id="hold-progress-bar"></div>
+                <span>Hold 3s to Delete</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let globalDevices = [];
+    let currentSortCol = '';
+    let sortAscending = true;
+
+    // Pagination State
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        lucide.createIcons();
+        loadDevices();
+        setupFormHandler();
+        startLiveSync(); // Initiates the background poller
+
+        // Search Listener - Resets to page 1 on search
+        document.getElementById('searchInput').addEventListener('input', function (e) {
+            currentPage = 1;
+            renderTable(e.target.value);
+        });
+    });
+
+    // --- Expert Background Poller (Live Sync) ---
+    function startLiveSync() {
+        setInterval(() => {
+            fetch('/api/get-devices')
+                .then(response => response.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        // Mathematically hash/compare the strings to avoid DOM flickering
+                        const newDataString = JSON.stringify(res.data);
+                        const oldDataString = JSON.stringify(globalDevices);
+
+                        if (newDataString !== oldDataString) {
+                            globalDevices = res.data; // Update internal memory
+                            // Re-render, completely preserving user's search and pagination state
+                            renderTable(document.getElementById('searchInput').value);
+                        }
+                    }
+                })
+                // Fails silently in the background if network drops momentarily 
+                .catch(() => { });
+        }, 3000); // Polls every 3 seconds
+    }
+
+    // --- Alert Helpers ---
+    function showPageAlert(msg, type = "error") {
+        const box = document.getElementById('page-alert');
+        box.className = 'alert-box alert-' + type;
+        box.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i> <span>${msg}</span>`;
+        box.style.display = 'flex';
+        lucide.createIcons();
+        setTimeout(() => { box.style.display = 'none'; }, 5000);
+    }
+
+    function showModalAlert(msg, type = "error") {
+        const box = document.getElementById('modal-alert');
+        box.className = 'alert-box alert-' + type;
+        box.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i> <span>${msg}</span>`;
+        box.style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    // --- 1. Fetch and Display ---
+    function loadDevices() {
+        fetch('/api/get-devices')
+            .then(response => response.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    globalDevices = res.data;
+                    renderTable(document.getElementById('searchInput').value);
+                } else {
+                    showPageAlert("Error loading devices: " + res.message, "error");
+                }
+            })
+            .catch(err => {
+                console.error("Fetch error:", err);
+                showPageAlert("Failed to communicate with the server.", "error");
+            });
+    }
+
+    // --- 2. Render Logic (Search, Sort, Pagination) ---
+    function renderTable(searchTerm = '') {
+        const tbody = document.getElementById('device-tbody');
+        tbody.innerHTML = '';
+        const term = searchTerm.toLowerCase();
+
+        let filtered = globalDevices.filter(d =>
+            d.bcc.toLowerCase().includes(term) ||
+            d.chain_type.toLowerCase().includes(term) ||
+            d.ip_address.toLowerCase().includes(term)
+        );
+
+        if (currentSortCol) {
+            filtered.sort((a, b) => {
+                let valA = a[currentSortCol].toLowerCase();
+                let valB = b[currentSortCol].toLowerCase();
+                if (valA < valB) return sortAscending ? -1 : 1;
+                if (valA > valB) return sortAscending ? 1 : -1;
+                return 0;
+            });
+        }
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const paginatedData = filtered.slice(startIndex, startIndex + itemsPerPage);
+        const endDisplay = Math.min(startIndex + itemsPerPage, totalItems);
+        document.getElementById('pageInfo').innerText = `Showing ${totalItems === 0 ? 0 : startIndex + 1} to ${endDisplay} of ${totalItems} entries`;
+        document.getElementById('btnPrev').disabled = currentPage === 1;
+        document.getElementById('btnNext').disabled = currentPage === totalPages || totalItems === 0;
+
+        if (paginatedData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">No matching devices found.</td></tr>`;
+            return;
+        }
+
+        paginatedData.forEach(device => {
+            let badgeClass = 'badge-neutral';
+            if (device.chain_type === 'RUSTANS') badgeClass = 'badge-rustans';
+            else if (device.chain_type === 'RDS') badgeClass = 'badge-rds';
+
+            const safeDeviceData = JSON.stringify(device).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeName = device.bcc.replace(/'/g, "\\'");
+
+            const tr = `
+                <tr>
+                    <td><div class="device-name">${device.bcc}</div></td>
+                    <td><span class="badge ${badgeClass}"><span class="badge-dot"></span>${device.chain_type}</span></td>
+                    <td><span class="device-ip">${device.ip_address}</span></td>
+                    <td>
+                        <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                            <button type="button" class="action-btn" onclick='openModal(${safeDeviceData})' title="Edit">
+                                <i data-lucide="edit-2"></i>
+                            </button>
+                            <button type="button" class="action-btn danger" onclick="openDeleteModal(${device.device_id}, '${safeName}')" title="Delete">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', tr);
+        });
+
+        lucide.createIcons();
+    }
+
+    // --- 3. Interaction Handlers ---
+    function changePage(direction) {
+        currentPage += direction;
+        renderTable(document.getElementById('searchInput').value);
+    }
+
+    function sortTable(columnKey, iconIndex) {
+        if (currentSortCol === columnKey) {
+            sortAscending = !sortAscending;
+        } else {
+            currentSortCol = columnKey;
+            sortAscending = true;
+        }
+
+        currentPage = 1;
+
+        document.querySelectorAll('.sort-icon').forEach(icon => {
+            icon.setAttribute('data-lucide', 'chevrons-up-down');
+            icon.classList.remove('sort-active');
+        });
+
+        const activeIcon = document.getElementById('icon-' + iconIndex);
+        activeIcon.setAttribute('data-lucide', sortAscending ? 'chevron-up' : 'chevron-down');
+        activeIcon.classList.add('sort-active');
+
+        lucide.createIcons();
+        renderTable(document.getElementById('searchInput').value);
+    }
+
+    function openModal(device = null) {
+        const form = document.getElementById('device-form');
+        document.getElementById('modal-alert').style.display = 'none';
+
+        if (device) {
+            document.getElementById('device_id').value = device.device_id;
+            document.getElementById('bcc').value = device.bcc;
+            document.getElementById('ip_address').value = device.ip_address;
+            document.getElementById('comms_key').value = device.comms_key;
+            document.getElementById('chain_type').value = device.chain_type;
+        } else {
+            form.reset();
+            document.getElementById('device_id').value = '';
+            document.getElementById('comms_key').value = '0';
+        }
+        document.getElementById('device-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('device-modal').style.display = 'none';
+        document.getElementById('device-form').reset();
+    }
+
+    function setupFormHandler() {
+        const form = document.getElementById('device-form');
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            document.getElementById('modal-alert').style.display = 'none';
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = "Saving...";
+            submitBtn.disabled = true;
+
+            const formData = new FormData(form);
+
+            fetch('/api/save-device', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        closeModal();
+                        showPageAlert("Device saved successfully.", "success");
+                        loadDevices();
+                    } else {
+                        showModalAlert(res.message, "error");
+                    }
+                })
+                .catch(err => {
+                    console.error("Save error:", err);
+                    showModalAlert("A network error occurred. Check your connection.", "error");
+                })
+                .finally(() => {
+                    submitBtn.innerText = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
+    }
+
+    // --- 5. Hold-to-Delete Logic ---
+    let deleteTimeout;
+    let deviceToDelete = null;
+
+    function openDeleteModal(deviceId, deviceName) {
+        deviceToDelete = deviceId;
+        document.getElementById('delete-target-name').innerText = deviceName;
+        document.getElementById('delete-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('delete-modal').style.display = 'none';
+        deviceToDelete = null;
+        resetHold();
+    }
+
+    const holdBtn = document.getElementById('hold-delete-btn');
+    const holdProgress = document.getElementById('hold-progress-bar');
+
+    function startHold(e) {
+        if (!deviceToDelete) return;
+        if (e.cancelable) e.preventDefault();
+
+        holdBtn.style.transform = 'scale(0.95)';
+        holdProgress.style.transition = 'width 3s linear';
+        holdProgress.style.width = '100%';
+
+        deleteTimeout = setTimeout(() => {
+            executeDelete();
+        }, 3000);
+    }
+
+    function resetHold() {
+        clearTimeout(deleteTimeout);
+        holdBtn.style.transform = 'scale(1)';
+        holdProgress.style.transition = 'width 0.2s ease-out';
+        holdProgress.style.width = '0%';
+    }
+
+    holdBtn.addEventListener('mousedown', startHold);
+    holdBtn.addEventListener('mouseup', resetHold);
+    holdBtn.addEventListener('mouseleave', resetHold);
+
+    holdBtn.addEventListener('touchstart', startHold, { passive: false });
+    holdBtn.addEventListener('touchend', resetHold);
+    holdBtn.addEventListener('touchcancel', resetHold);
+
+    function executeDelete() {
+        const deviceId = deviceToDelete;
+        closeDeleteModal();
+
+        const formData = new FormData();
+        formData.append('device_id', deviceId);
+
+        fetch('/api/delete-device', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    showPageAlert("Device removed successfully.", "success");
+                    loadDevices();
+                } else {
+                    showPageAlert("Error deleting device: " + res.message, "error");
+                }
+            })
+            .catch(err => {
+                console.error("Delete error:", err);
+                showPageAlert("Failed to communicate with the server.", "error");
+            });
+    }
+</script>
+{% endblock %}
