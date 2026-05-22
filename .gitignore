@@ -165,7 +165,7 @@ site/
 # Optional Test Scripts Folder
 # Uncomment if you never want to commit test files
 # ==========================================================
-# TestFolders/
+TestFolders/
 
 # ==========================================================
 # Git Merge / Patch Files
