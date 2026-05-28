@@ -5,7 +5,7 @@ from datetime import datetime
 from zk import ZK
 
 # --- CONFIGURATION ---
-DEVICE_IP = '192.168.100.162'  # Update this to your device IP
+DEVICE_IP = '10.39.29.3'  # Update this to your device IP
 DEVICE_PORT = 4370
 OUTPUT_FILE = 'master_user_data.json'
 

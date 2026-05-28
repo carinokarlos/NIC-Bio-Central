@@ -1,48 +1,60 @@
-CREATE TABLE dbo.backup_device_users (     
-    backup_id INT IDENTITY(1,1) PRIMARY KEY,     
-    device_ip VARCHAR(20) NOT NULL,           -- Which terminal this came from     
-    employee_code VARCHAR(50) NOT NULL,       -- The Employee ID (mapped from HRIS)     
-    access_number INT NULL,                   -- Added: The hardware Access Number
-    employee_name VARCHAR(100) NOT NULL,     
-    privilege_level INT DEFAULT 0,            -- 0 = User, 14 = Super Admin     
-    pin_password VARCHAR(50) NULL,            -- The keypad PIN (if any)     
-    backup_timestamp DATETIME DEFAULT GETDATE() -- When the backup was run 
+CREATE DATABASE IF NOT EXISTS Biocentral_Backup;
+USE Biocentral_Backup;
+
+-- =====================================================
+-- 1. EMPLOYEE USERS (PIN + ACCESS CODE)
+-- =====================================================
+CREATE TABLE backup_device_users (
+    backup_id INT AUTO_INCREMENT PRIMARY KEY,
+    device_ip VARCHAR(20) NOT NULL,
+    employee_code VARCHAR(50) NOT NULL,
+    access_number INT NULL,                  -- 🔥 RESTORED (device access code)
+    employee_name VARCHAR(100) NOT NULL,
+    privilege_level INT DEFAULT 0,
+    pin_password VARCHAR(255) NULL,
+    backup_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- 🔥 NEW: Required for ON DUPLICATE KEY UPDATE to work in the Python script
+    UNIQUE KEY unique_user_device (device_ip, employee_code) 
 );
 
--- Indexing for fast lookups by employee or by device 
-CREATE NONCLUSTERED INDEX IX_BackupUsers_EmpCode ON dbo.backup_device_users(employee_code); 
-CREATE NONCLUSTERED INDEX IX_BackupUsers_Device ON dbo.backup_device_users(device_ip);
-CREATE NONCLUSTERED INDEX IX_BackupUsers_Time ON dbo.backup_device_users(backup_timestamp);
+CREATE INDEX idx_users_empcode ON backup_device_users(employee_code);
+CREATE INDEX idx_users_device ON backup_device_users(device_ip);
+CREATE INDEX idx_users_access ON backup_device_users(access_number);
 
-
-CREATE TABLE dbo.backup_fingerprints (     
-    backup_id INT IDENTITY(1,1) PRIMARY KEY,     
-    device_ip VARCHAR(20) NOT NULL,     
-    employee_code VARCHAR(50) NOT NULL,     
-    finger_index INT NOT NULL,                -- 0 to 9 (representing which finger)     
-    finger_template VARCHAR(MAX) NOT NULL,    -- The massive base64 biometric template     
-    backup_timestamp DATETIME DEFAULT GETDATE() 
+-- =====================================================
+-- 2. FINGERPRINTS (BIOMETRIC DATA)
+-- =====================================================
+CREATE TABLE backup_fingerprints (
+    backup_id INT AUTO_INCREMENT PRIMARY KEY,
+    device_ip VARCHAR(20) NOT NULL,
+    employee_code VARCHAR(50) NOT NULL,
+    finger_index TINYINT NOT NULL,
+    finger_template LONGTEXT NOT NULL,
+    is_valid TINYINT(1) DEFAULT 1,
+    backup_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- 🔥 NEW: Prevents saving the exact same finger index twice for the same user on the same device
+    UNIQUE KEY unique_fingerprint (device_ip, employee_code, finger_index)
 );
 
--- Indexing to quickly find all fingerprints for a specific employee on a specific device 
-CREATE NONCLUSTERED INDEX IX_BackupFingers_EmpCode ON dbo.backup_fingerprints(employee_code); 
-CREATE NONCLUSTERED INDEX IX_BackupFingers_Device ON dbo.backup_fingerprints(device_ip);
+CREATE INDEX idx_finger_empcode ON backup_fingerprints(employee_code);
+CREATE INDEX idx_finger_device ON backup_fingerprints(device_ip);
 
-
-CREATE TABLE dbo.backup_attendance_logs (     
-    log_id INT IDENTITY(1,1) PRIMARY KEY,     
-    device_ip VARCHAR(20) NOT NULL,     
-    employee_code VARCHAR(50) NOT NULL,     
-    punch_time DATETIME NOT NULL,             -- The exact time they clocked in/out     
-    punch_type INT NULL,                      -- e.g., 0=Check-in, 1=Check-out (from device)     
-    verify_type INT NULL,                     -- e.g., 1=Fingerprint, 3=Password     
-    backup_timestamp DATETIME DEFAULT GETDATE() 
+-- =====================================================
+-- 3. ATTENDANCE LOGS
+-- =====================================================
+CREATE TABLE backup_attendance_logs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    device_ip VARCHAR(20) NOT NULL,
+    employee_code VARCHAR(50) NOT NULL,
+    punch_time DATETIME NOT NULL,
+    -- Updated comment to reflect that your device might send '5'
+    punch_type TINYINT NOT NULL COMMENT '0=Time In, 1=Time Out, 5=Custom State', 
+    verify_type TINYINT NULL COMMENT '1=Fingerprint, 3=Password',
+    backup_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- 🔥 NEW: Completely prevents duplicate punch entries down to the exact second
+    UNIQUE KEY unique_punch (device_ip, employee_code, punch_time)
 );
 
-
--- 1. Index for pulling a specific employee's logs 
-CREATE NONCLUSTERED INDEX IX_BackupLogs_EmpCode ON dbo.backup_attendance_logs(employee_code);
--- 2. Index for filtering logs by date (Critical for payroll/reporting speeds) 
-CREATE NONCLUSTERED INDEX IX_BackupLogs_PunchTime ON dbo.backup_attendance_logs(punch_time);
--- 3. Composite index to quickly see who clocked into a specific store on a specific day 
-CREATE NONCLUSTERED INDEX IX_BackupLogs_Device_Time ON dbo.backup_attendance_logs(device_ip, punch_time);
+CREATE INDEX idx_logs_empcode ON backup_attendance_logs(employee_code);
+CREATE INDEX idx_logs_time ON backup_attendance_logs(punch_time);
+CREATE INDEX idx_logs_device_time ON backup_attendance_logs(device_ip, punch_time);
