@@ -507,6 +507,11 @@
   .card-purple::before { background: #8b5cf6; }
   .card-orange::before { background: #f59e0b; }
 
+  .stagger-5 { animation-delay: 0.5s; opacity: 0; }
+
+  .card-red::before { background: #ef4444; }
+  .card-red .dash-icon-wrap { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
   .dash-icon-wrap {
     width: 55px;
     height: 55px;
@@ -694,6 +699,15 @@
         </div>
         <h3>Sync Device Time</h3>
         <p>Align remote terminal clocks with the central server to ensure accurate attendance logs.</p>
+        <i class="fas fa-arrow-right dash-card-arrow"></i>
+      </a>
+
+      <a href="/master-database" class="dash-card card-red pop-in-container stagger-5">
+        <div class="dash-icon-wrap">
+          <i class="fas fa-database"></i>
+        </div>
+        <h3>Connect to Master Database</h3>
+        <p>Establish a secure connection to the central master database to manage overarching biometric records and sync user logic.</p>
         <i class="fas fa-arrow-right dash-card-arrow"></i>
       </a>
 

@@ -55,13 +55,32 @@
 
     /* --- Animations --- */
     @keyframes popIn {
-        0% { opacity: 0; transform: scale(0.9) translateY(20px); }
-        100% { opacity: 1; transform: scale(1) translateY(0); }
+        0% {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
     }
 
-    .pop-in-container { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .stagger-1 { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.1s; opacity: 0; }
-    .stagger-2 { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.2s; opacity: 0; }
+    .pop-in-container {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .stagger-1 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.1s;
+        opacity: 0;
+    }
+
+    .stagger-2 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
 
     /* --- Base Layout --- */
     .manager-wrapper {
@@ -74,35 +93,154 @@
         font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     }
 
-    .welcome-title { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-    .welcome-subtitle { font-size: 0.875rem; color: var(--text-secondary); }
+    .welcome-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .welcome-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
 
     /* --- Table Layouts --- */
-    .table-title { font-size: 1.125rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; margin: 0; }
-    .audit-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .audit-table thead th { font-size: 0.6875rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary); padding: 12px 16px; text-align: left; background: var(--bg-surface); border-bottom: 1px solid var(--border); }
-    .audit-table tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
-    .audit-table tbody tr:nth-child(even) { background-color: var(--bg-muted); }
-    .audit-table tbody tr:last-child { border-bottom: none; }
-    .audit-table tbody tr:hover td { background: var(--bg-hover); }
-    .audit-table tbody td { padding: 12px 16px; font-size: 0.8125rem; color: var(--text-primary); vertical-align: middle; }
+    .table-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+
+    .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .audit-table thead th {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 12px 16px;
+        text-align: left;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .audit-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background .1s;
+    }
+
+    .audit-table tbody tr:nth-child(even) {
+        background-color: var(--bg-muted);
+    }
+
+    .audit-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .audit-table tbody tr:hover td {
+        background: var(--bg-hover);
+    }
+
+    .audit-table tbody td {
+        padding: 12px 16px;
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
 
     /* --- Badges & Buttons --- */
-    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.6875rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
-    .badge-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-    .badge-rustans { background: var(--yellow-bg); color: var(--yellow-text); }
-    .badge-rustans .badge-dot { background: var(--yellow-text); }
-    .badge-rds { background: var(--blue-bg); color: var(--blue-text); }
-    .badge-rds .badge-dot { background: var(--blue-text); }
-    .badge-active { background: var(--green-bg); color: var(--green-text); }
-    .badge-active .badge-dot { background: var(--green-text); }
-    .badge-neutral { background: var(--bg-muted); color: var(--text-secondary); border: 1px solid var(--border); }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
 
-    .btn { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 500; padding: 8px 16px; border-radius: var(--radius-md); cursor: pointer; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-primary); transition: background .15s; }
-    .btn:hover { background: var(--bg-muted); }
-    
-    .btn-connect { background: var(--blue-bg); color: var(--blue-text); border-color: #bfdbfe; font-size: 0.75rem; font-weight: 600; padding: 6px 12px; }
-    .btn-connect:hover { background: #dbeafe; }
+    .badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .badge-rustans {
+        background: var(--yellow-bg);
+        color: var(--yellow-text);
+    }
+
+    .badge-rustans .badge-dot {
+        background: var(--yellow-text);
+    }
+
+    .badge-rds {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+    }
+
+    .badge-rds .badge-dot {
+        background: var(--blue-text);
+    }
+
+    .badge-active {
+        background: var(--green-bg);
+        color: var(--green-text);
+    }
+
+    .badge-active .badge-dot {
+        background: var(--green-text);
+    }
+
+    .badge-neutral {
+        background: var(--bg-muted);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        transition: background .15s;
+    }
+
+    .btn:hover {
+        background: var(--bg-muted);
+    }
+
+    .btn-connect {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: #bfdbfe;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 6px 12px;
+    }
+
+    .btn-connect:hover {
+        background: #dbeafe;
+    }
 
     .btn-danger {
         background: var(--red-bg);
@@ -111,70 +249,274 @@
         transition: all 0.2s ease;
     }
 
-    /* Updated hover state */
     .btn-danger:hover {
-        background: #fca5a5; /* Slightly darker red background on hover */
-        color: #7f1d1d !important; /* Deep dark red text for high contrast */
+        background: #fca5a5;
+        color: #7f1d1d !important;
         border-color: #ef4444;
         box-shadow: 0 0 8px rgba(220, 38, 38, 0.2);
     }
 
-    .action-btn { background: var(--bg-surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: var(--radius-md); cursor: pointer; color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; transition: 0.2s; display: inline-flex; align-items: center; gap: 4px; }
-    .action-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-    .action-btn i { width: 14px; height: 14px; }
+    .action-btn {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        padding: 6px 12px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .action-btn:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+    }
+
+    .action-btn i {
+        width: 14px;
+        height: 14px;
+    }
 
     /* --- Search & Pagination --- */
-    .search-wrapper { position: relative; }
-    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px; height: 16px; }
-    .search-input { padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.8125rem; outline: none; width: 250px; background: var(--bg-surface); color: var(--text-primary); transition: border-color .15s, box-shadow .15s; }
-    .search-input:focus { border-color: var(--blue-text); box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1); }
-    
-    .pagination-container { display: flex; justify-content: space-between; align-items: center; padding: 16px; font-size: 0.8125rem; color: var(--text-secondary); border-top: 1px solid var(--border); background: var(--bg-surface); }
-    .pagination-controls { display: flex; gap: 8px; }
+    .search-wrapper {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        width: 16px;
+        height: 16px;
+    }
+
+    .search-input {
+        padding: 8px 12px 8px 34px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 0.8125rem;
+        outline: none;
+        width: 250px;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .search-input:focus {
+        border-color: var(--blue-text);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        border-top: 1px solid var(--border);
+        background: var(--bg-surface);
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+    }
 
     /* --- Modal --- */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 99999; }
-    .modal-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--bento-radius); width: 650px; max-width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; }
-    .modal-head { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 1rem; font-weight: 600; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); }
-    .modal-close { background: none; border: none; cursor: pointer; color: var(--text-secondary); transition: color 0.2s; }
-    .modal-close:hover { color: var(--text-primary); }
-    .modal-body { padding: 24px; max-height: 500px; overflow-y: auto; background: var(--bg-surface); }
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+    }
+
+    .modal-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--bento-radius);
+        width: 650px;
+        max-width: 90%;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modal-head {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg-surface);
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+        color: var(--text-primary);
+    }
+
+    .modal-body {
+        padding: 24px;
+        max-height: 500px;
+        overflow-y: auto;
+        background: var(--bg-surface);
+    }
 
     /* --- Simple Logs Table --- */
-    .simple-log-table { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
-    .log-header { display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--bg-muted); padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.6875rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; }
-    .log-row { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.8125rem; align-items: center; transition: background .1s; }
-    .log-row:hover { background: var(--bg-hover); }
-    .log-row:last-child { border-bottom: none; }
-    .log-type.in { color: var(--green-text); font-weight: 600; }
-    .log-type.out { color: var(--red-text); font-weight: 600; }
+    .simple-log-table {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .log-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        background: var(--bg-muted);
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+
+    .log-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.8125rem;
+        align-items: center;
+        transition: background .1s;
+    }
+
+    .log-row:hover {
+        background: var(--bg-hover);
+    }
+
+    .log-row:last-child {
+        border-bottom: none;
+    }
+
+    .log-type.in {
+        color: var(--green-text);
+        font-weight: 600;
+    }
+
+    .log-type.out {
+        color: var(--red-text);
+        font-weight: 600;
+    }
 
     /* Animations */
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .lucide-spin { animation: spin 1s linear infinite; }
-    .slide-next { animation: slideInRight 0.25s ease-out forwards; }
-    .slide-prev { animation: slideInLeft 0.25s ease-out forwards; }
-    @keyframes slideInRight { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes tableUpdate { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
-    .animate-update { animation: tableUpdate 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .lucide-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    .slide-next {
+        animation: slideInRight 0.25s ease-out forwards;
+    }
+
+    .slide-prev {
+        animation: slideInLeft 0.25s ease-out forwards;
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes tableUpdate {
+        0% {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-update {
+        animation: tableUpdate 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
 </style>
 
 <div class="manager-wrapper">
     <div class="bento-layout">
 
-        <div class="bento-panel stagger-1" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+        <div class="bento-panel stagger-1"
+            style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
             <h2 class="welcome-title">Terminal Synchronization</h2>
-            <p class="welcome-subtitle" id="header-subtitle">Select a device to view enrolled staff and live attendance logs.</p>
+            <p class="welcome-subtitle" id="header-subtitle">Select a device to view enrolled staff and live attendance
+                logs.</p>
         </div>
 
         <div class="view-section stagger-2" id="view-devices">
             <div class="bento-panel" style="padding: 0; overflow: hidden;">
-                <div style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                <div
+                    style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
                     <h3 class="table-title"><i data-lucide="server"></i> Available Devices</h3>
                     <div class="search-wrapper">
                         <i data-lucide="search" class="search-icon"></i>
-                        <input type="text" id="deviceSearch" class="search-input" placeholder="Search devices by name, IP..." onkeyup="filterDevices()">
+                        <input type="text" id="deviceSearch" class="search-input"
+                            placeholder="Search devices by name, IP..." onkeyup="filterDevices()">
                     </div>
                 </div>
 
@@ -189,28 +531,45 @@
                     </thead>
                     <tbody id="device-tbody">
                         <tr>
-                            <td colspan="4" style="text-align: center; padding: 3rem;"><i data-lucide="loader-2" class="lucide-spin"></i> Loading devices...</td>
+                            <td colspan="4" style="text-align: center; padding: 3rem;"><i data-lucide="loader-2"
+                                    class="lucide-spin"></i> Loading devices...</td>
                         </tr>
                     </tbody>
                 </table>
+
+                <!-- Device Pagination (Added per request) -->
+                <div class="pagination-container" id="dev-pagination-container" style="display: none;">
+                    <span id="dev-page-info">Showing 0 to 0 of 0 entries</span>
+                    <div class="pagination-controls">
+                        <button class="btn" id="dev-prev-btn" onclick="changeDevPage(-1)"><i
+                                data-lucide="chevron-left"></i> Prev</button>
+                        <button class="btn" id="dev-next-btn" onclick="changeDevPage(1)">Next <i
+                                data-lucide="chevron-right"></i></button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
         <div class="view-section" id="view-employees" style="display: none;">
             <div class="bento-panel" style="padding: 0; overflow: hidden;">
-                <div style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 1rem;">
-                    <h3 class="table-title"><i data-lucide="users"></i> Device Roster: <span id="selected-device-name" style="color: var(--blue-text); margin-left: 8px;"></span></h3>
-                    
+                <div
+                    style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 1rem;">
+                    <h3 class="table-title"><i data-lucide="users"></i> Device Roster: <span id="selected-device-name"
+                            style="color: var(--blue-text); margin-left: 8px;"></span></h3>
+
                     <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                         <div class="search-wrapper">
                             <i data-lucide="search" class="search-icon"></i>
-                            <input type="text" id="employeeSearch" class="search-input" placeholder="Search ID or Name..." onkeyup="filterEmployees()">
+                            <input type="text" id="employeeSearch" class="search-input"
+                                placeholder="Search ID or Name..." onkeyup="filterEmployees()">
                         </div>
-                        
-                        <button class="btn btn-connect" onclick="backupDeviceLogs()" title="Backup terminal logs to CSV">
+
+                        <button class="btn btn-connect" onclick="backupDeviceLogs()"
+                            title="Backup terminal logs to CSV">
                             <i data-lucide="download-cloud"></i> Backup
                         </button>
-                        
+
                         <button class="btn btn-danger" onclick="openPurgeModal()" title="Purge terminal storage">
                             <i data-lucide="hard-drive"></i> Purge
                         </button>
@@ -233,11 +592,14 @@
                     <tbody id="employee-tbody">
                     </tbody>
                 </table>
+                <!-- Employee Pagination (Kept original state) -->
                 <div class="pagination-container">
                     <span id="emp-page-info">Showing 0 to 0 of 0 entries</span>
                     <div class="pagination-controls">
-                        <button class="btn" id="emp-prev-btn" onclick="changeEmpPage(-1)"><i data-lucide="chevron-left"></i> Prev</button>
-                        <button class="btn" id="emp-next-btn" onclick="changeEmpPage(1)">Next <i data-lucide="chevron-right"></i></button>
+                        <button class="btn" id="emp-prev-btn" onclick="changeEmpPage(-1)"><i
+                                data-lucide="chevron-left"></i> Prev</button>
+                        <button class="btn" id="emp-next-btn" onclick="changeEmpPage(1)">Next <i
+                                data-lucide="chevron-right"></i></button>
                     </div>
                 </div>
             </div>
@@ -250,7 +612,8 @@
         <div class="modal-head">
             <span id="modal-emp-name">Attendance Logs</span>
             <div style="display: flex; gap: 12px; align-items: center;">
-                <button id="exportLogsBtn" class="btn btn-connect" style="display: none; padding: 4px 10px;" onclick="exportCurrentLogs()">
+                <button id="exportLogsBtn" class="btn btn-connect" style="display: none; padding: 4px 10px;"
+                    onclick="exportCurrentLogs()">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i> Export
                 </button>
                 <button class="modal-close" onclick="closeModal()">
@@ -265,48 +628,61 @@
 
 <div id="purge-modal" class="modal-overlay">
     <div class="modal-card pop-in-container" style="width: 420px; padding: 0; overflow: hidden;">
-        
+
         <div style="height: 4px; background: var(--red-text); width: 100%;"></div>
-        
+
         <div style="padding: 2rem;">
             <div style="display: flex; justify-content: center; margin-bottom: 1.25rem;">
-                <div style="background: var(--red-bg); border: 1px solid #fecaca; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--red-text); box-shadow: 0 4px 10px rgba(220, 38, 38, 0.1);">
+                <div
+                    style="background: var(--red-bg); border: 1px solid #fecaca; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--red-text); box-shadow: 0 4px 10px rgba(220, 38, 38, 0.1);">
                     <i data-lucide="hard-drive" style="width: 32px; height: 32px;"></i>
                 </div>
             </div>
 
-            <h3 style="text-align: center; margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Purge Terminal Storage</h3>
-            
-            <div style="background: #fff5f5; border-left: 4px solid var(--red-text); padding: 12px 16px; border-radius: 4px; margin: 1rem 0 1.5rem 0; text-align: left;">
+            <h3
+                style="text-align: center; margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">
+                Purge Terminal Storage</h3>
+
+            <div
+                style="background: #fff5f5; border-left: 4px solid var(--red-text); padding: 12px 16px; border-radius: 4px; margin: 1rem 0 1.5rem 0; text-align: left;">
                 <p style="color: #991b1b; font-size: 0.8125rem; margin: 0; line-height: 1.5;">
-                    <strong>Warning:</strong> This will permanently wipe all attendance data from the physical device hardware. This action cannot be undone.
+                    <strong>Warning:</strong> This will permanently wipe all attendance data from the physical device
+                    hardware. This action cannot be undone.
                 </p>
             </div>
 
             <div style="text-align: left; margin-bottom: 2rem;">
-                <label for="purge-pin" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Administrator PIN</label>
+                <label for="purge-pin"
+                    style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Administrator
+                    PIN</label>
                 <div style="position: relative;">
-                    <i data-lucide="lock" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; width: 16px; height: 16px;"></i>
-                    <input type="password" id="purge-pin" class="search-input" placeholder="Enter PIN to confirm" style="width: 100%; padding: 10px 12px 10px 36px; text-align: left; font-size: 1rem; box-sizing: border-box;" autocomplete="off">
+                    <i data-lucide="lock"
+                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; width: 16px; height: 16px;"></i>
+                    <input type="password" id="purge-pin" class="search-input" placeholder="Enter PIN to confirm"
+                        style="width: 100%; padding: 10px 12px 10px 36px; text-align: left; font-size: 1rem; box-sizing: border-box;"
+                        autocomplete="off">
                 </div>
             </div>
-            
+
             <div style="display: flex; gap: 12px;">
-                <button type="button" class="btn" style="flex: 1; justify-content: center; padding: 10px;" onclick="closePurgeModal()">Cancel</button>
-                <button type="button" class="btn btn-danger" id="purge-confirm-btn" style="flex: 1; justify-content: center; padding: 10px;" onclick="executePurge()">
+                <button type="button" class="btn" style="flex: 1; justify-content: center; padding: 10px;"
+                    onclick="closePurgeModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" id="purge-confirm-btn"
+                    style="flex: 1; justify-content: center; padding: 10px;" onclick="executePurge()">
                     <i data-lucide="alert-triangle" style="width: 16px; height: 16px; margin-right: 4px;"></i> Purge Now
                 </button>
             </div>
         </div>
-        
+
     </div>
 </div>
 
 <div id="alert-modal" class="modal-overlay">
     <div class="modal-card pop-in-container" style="width: 350px; text-align: center; padding: 2rem;">
         <div id="alert-icon-container" style="margin-bottom: 1rem; display: flex; justify-content: center;">
-            </div>
-        <h3 id="alert-title" style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Notice</h3>
+        </div>
+        <h3 id="alert-title"
+            style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Notice</h3>
         <p id="alert-message" style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
             Message goes here.
         </p>
@@ -319,7 +695,13 @@
 <script>
     let currentDeviceId = null;
 
-    // Pagination & Search State
+    // --- Device Pagination State (10 items per page) ---
+    let globalDeviceData = [];
+    let filteredDeviceData = [];
+    let currentDevPage = 1;
+    const devRowsPerPage = 10;
+
+    // --- Employee Pagination State (Original 20 items per page) ---
     let globalEmployeeData = [];
     let filteredEmployeeData = [];
     let currentEmpPage = 1;
@@ -361,38 +743,127 @@
             .then(response => response.json())
             .then(res => {
                 const tbody = document.getElementById('device-tbody');
-                tbody.innerHTML = '';
 
                 if (res.status === 'success') {
                     if (res.data.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">No devices found in database.</td></tr>`;
+                        document.getElementById('dev-pagination-container').style.display = 'none';
                         return;
                     }
 
-                    res.data.forEach(device => {
-                        let badgeClass = 'badge-neutral';
-                        if (device.chain_type === 'RUSTANS') badgeClass = 'badge-rustans';
-                        else if (device.chain_type === 'RDS') badgeClass = 'badge-rds';
+                    globalDeviceData = res.data;
+                    filteredDeviceData = [...globalDeviceData];
+                    currentDevPage = 1;
+                    renderDeviceTable();
+                    document.getElementById('dev-pagination-container').style.display = 'flex';
 
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><strong>${device.bcc}</strong></td>
-                            <td><span class="badge ${badgeClass}"><span class="badge-dot"></span>${device.chain_type}</span></td>
-                            <td style="font-family: monospace; color: var(--text-secondary);">${device.ip_address}</td>
-                            <td style="text-align: right;">
-                                <button class="btn-connect" onclick="connectToDevice('${device.device_id}', '${device.bcc}')">
-                                    <i data-lucide="wifi"></i> <span>Connect</span>
-                                </button>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                    lucide.createIcons();
                 } else {
                     tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--red-text);">Error: ${res.message}</td></tr>`;
+                    document.getElementById('dev-pagination-container').style.display = 'none';
                 }
             })
             .catch(err => console.error("Fetch error:", err));
+    }
+
+    // --- Render Device Table ---
+    function renderDeviceTable() {
+        const tbody = document.getElementById('device-tbody');
+        tbody.innerHTML = '';
+
+        if (filteredDeviceData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">No devices found.</td></tr>`;
+            updateDevPaginationInfo(0);
+            return;
+        }
+
+        const startIndex = (currentDevPage - 1) * devRowsPerPage;
+        const endIndex = startIndex + devRowsPerPage;
+        const pageData = filteredDeviceData.slice(startIndex, endIndex);
+
+        pageData.forEach(device => {
+            let badgeClass = 'badge-neutral';
+            if (device.chain_type === 'RUSTANS') badgeClass = 'badge-rustans';
+            else if (device.chain_type === 'RDS') badgeClass = 'badge-rds';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${device.bcc}</strong></td>
+                <td><span class="badge ${badgeClass}"><span class="badge-dot"></span>${device.chain_type}</span></td>
+                <td style="font-family: monospace; color: var(--text-secondary);">${device.ip_address}</td>
+                <td style="text-align: right;">
+                    <button class="btn-connect" onclick="connectToDevice('${device.device_id}', '${device.bcc}')">
+                        <i data-lucide="wifi"></i> <span>Connect</span>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        lucide.createIcons();
+        updateDevPaginationInfo(filteredDeviceData.length);
+    }
+
+    // --- Device Search Logic ---
+    function filterDevices() {
+        const term = document.getElementById('deviceSearch').value.toLowerCase();
+
+        filteredDeviceData = globalDeviceData.filter(device =>
+            device.bcc.toLowerCase().includes(term) ||
+            device.ip_address.toLowerCase().includes(term) ||
+            (device.chain_type && device.chain_type.toLowerCase().includes(term))
+        );
+
+        currentDevPage = 1;
+        const tbody = document.getElementById('device-tbody');
+        tbody.classList.remove('slide-next', 'slide-prev', 'animate-update');
+        void tbody.offsetWidth; // Trigger reflow
+        tbody.classList.add('animate-update');
+
+        renderDeviceTable();
+    }
+
+    // --- Device Pagination Controls ---
+    function changeDevPage(delta) {
+        currentDevPage += delta;
+        const tbody = document.getElementById('device-tbody');
+        tbody.classList.remove('slide-next', 'slide-prev', 'animate-update');
+        void tbody.offsetWidth;
+
+        if (delta > 0) tbody.classList.add('slide-next');
+        else tbody.classList.add('slide-prev');
+
+        renderDeviceTable();
+    }
+
+    function updateDevPaginationInfo(totalItems) {
+        const totalPages = Math.ceil(totalItems / devRowsPerPage) || 1;
+        const startRange = totalItems === 0 ? 0 : ((currentDevPage - 1) * devRowsPerPage) + 1;
+        const endRange = Math.min(currentDevPage * devRowsPerPage, totalItems);
+
+        document.getElementById('dev-page-info').innerText = `Showing ${startRange} to ${endRange} of ${totalItems} entries`;
+
+        const prevBtn = document.getElementById('dev-prev-btn');
+        const nextBtn = document.getElementById('dev-next-btn');
+
+        if (currentDevPage === 1) {
+            prevBtn.setAttribute('disabled', 'true');
+            prevBtn.style.opacity = '0.5';
+            prevBtn.style.cursor = 'not-allowed';
+        } else {
+            prevBtn.removeAttribute('disabled');
+            prevBtn.style.opacity = '1';
+            prevBtn.style.cursor = 'pointer';
+        }
+
+        if (currentDevPage >= totalPages) {
+            nextBtn.setAttribute('disabled', 'true');
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'not-allowed';
+        } else {
+            nextBtn.removeAttribute('disabled');
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+        }
     }
 
     // --- Switch Views (Master/Detail) ---
@@ -420,23 +891,6 @@
         devView.classList.add('pop-in-container');
 
         document.getElementById('header-subtitle').innerText = "Select a device to view enrolled staff and live attendance logs.";
-    }
-
-    // --- Device Search Logic ---
-    function filterDevices() {
-        const term = document.getElementById('deviceSearch').value.toLowerCase();
-        const tbody = document.getElementById('device-tbody');
-        const rows = tbody.querySelectorAll('tr');
-
-        tbody.classList.remove('animate-update');
-        void tbody.offsetWidth;
-        tbody.classList.add('animate-update');
-
-        rows.forEach(row => {
-            if (row.cells.length === 1) return;
-            const text = row.innerText.toLowerCase();
-            row.style.display = text.includes(term) ? '' : 'none';
-        });
     }
 
     // --- Load Employees ---
@@ -471,6 +925,7 @@
             });
     }
 
+    // --- Render Employee Table ---
     function renderEmployeeTable() {
         const tbody = document.getElementById('employee-tbody');
         tbody.innerHTML = '';
@@ -507,6 +962,7 @@
         updatePaginationInfo(filteredEmployeeData.length);
     }
 
+    // --- Employee Search & Pagination ---
     function filterEmployees() {
         const term = document.getElementById('employeeSearch').value.toLowerCase();
         filteredEmployeeData = globalEmployeeData.filter(emp =>
@@ -740,7 +1196,7 @@
 
     // --- Device Backup & Purge Logic with Custom Modals ---
     function backupDeviceLogs() {
-        if(!currentDeviceId) {
+        if (!currentDeviceId) {
             showAlertModal("Error", "No device selected for backup.", "error");
             return;
         }
@@ -748,7 +1204,7 @@
     }
 
     function openPurgeModal() {
-        if(!currentDeviceId) return;
+        if (!currentDeviceId) return;
         document.getElementById('purge-pin').value = ''; // Reset pin input
         document.getElementById('purge-modal').style.display = 'flex';
     }
@@ -760,8 +1216,8 @@
     function executePurge() {
         const pin = document.getElementById('purge-pin').value;
         const confirmBtn = document.getElementById('purge-confirm-btn');
-        
-        if (pin !== "123123") {
+
+        if (pin !== "Zr!7Kp$2Vx@9LmQ#") {
             showAlertModal("Authentication Failed", "Incorrect Administrator PIN.", "error");
             return;
         }
@@ -778,24 +1234,24 @@
             method: 'POST',
             body: formData
         })
-        .then(res => res.json())
-        .then(res => {
-            if(res.status === 'success') {
-                showAlertModal("Success", "Terminal logs successfully purged.", "success");
-                closePurgeModal();
-                loadEmployees(currentDeviceId); 
-            } else {
-                showAlertModal("Purge Failed", res.message, "error");
-            }
-        })
-        .catch(err => {
-            showAlertModal("Network Error", "An error occurred during the purge command.", "error");
-            console.error(err);
-        })
-        .finally(() => {
-            confirmBtn.innerText = "Confirm Purge";
-            confirmBtn.disabled = false;
-        });
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    showAlertModal("Success", "Terminal logs successfully purged.", "success");
+                    closePurgeModal();
+                    loadEmployees(currentDeviceId);
+                } else {
+                    showAlertModal("Purge Failed", res.message, "error");
+                }
+            })
+            .catch(err => {
+                showAlertModal("Network Error", "An error occurred during the purge command.", "error");
+                console.error(err);
+            })
+            .finally(() => {
+                confirmBtn.innerText = "Confirm Purge";
+                confirmBtn.disabled = false;
+            });
     }
 </script>
 {% endblock %}

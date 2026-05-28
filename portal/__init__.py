@@ -71,3 +71,6 @@ app.register_blueprint(enroll_bp)
 
 from routes.move_registration import move_registration_bp 
 app.register_blueprint(move_registration_bp)
+
+from routes.master_db import master_db_bp
+app.register_blueprint(master_db_bp)
