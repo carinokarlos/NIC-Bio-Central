@@ -33,13 +33,13 @@ def fetch_master_data():
                 "user_id": user.user_id,
                 "name": user_name,
                 "privilege": user.privilege,
+                "pin": user.password,        # <-- added
                 "template_count": len(user_templates),
                 "templates": [
                     {
                         "fid": t.fid,
                         "valid": t.valid,
-                        # FIX: Encode binary template to Base64 string
-                        "template": base64.b64encode(t.template).decode('utf-8') 
+                        "template": base64.b64encode(t.template).decode('utf-8')
                     } for t in user_templates
                 ]
             }

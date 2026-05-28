@@ -252,6 +252,8 @@
     .btn-danger:hover {
         background: #fca5a5;
         color: #7f1d1d !important;
+        background: #fca5a5;
+        color: #7f1d1d !important;
         border-color: #ef4444;
         box-shadow: 0 0 8px rgba(220, 38, 38, 0.2);
     }
@@ -747,6 +749,7 @@
                 if (res.status === 'success') {
                     if (res.data.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">No devices found in database.</td></tr>`;
+                        document.getElementById('dev-pagination-container').style.display = 'none';
                         document.getElementById('dev-pagination-container').style.display = 'none';
                         return;
                     }
