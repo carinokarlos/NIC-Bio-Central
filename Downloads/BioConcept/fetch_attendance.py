@@ -4,7 +4,7 @@ from datetime import datetime
 from zk import ZK
 
 # --- CONFIGURATION ---
-DEVICE_IP = '192.168.10.100'  # Replace with your actual device IP
+DEVICE_IP = '192.168.100.161'  # Replace with your actual device IP
 DEVICE_PORT = 4370
 OUTPUT_FILE = 'attendance_logs.csv'
 
