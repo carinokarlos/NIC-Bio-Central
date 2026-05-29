@@ -393,6 +393,12 @@
         border-color: #fecaca;
     }
 
+    .action-btn.backup:hover {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: #bfdbfe;
+    }
+
     .action-btn i {
         width: 16px;
         height: 16px;
@@ -507,6 +513,204 @@
         position: relative;
         z-index: 10;
     }
+
+    /* --- Backup Modal --- */
+    .backup-phase {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.875rem;
+    }
+
+    .backup-phase:last-child {
+        border-bottom: none;
+    }
+
+    .backup-phase-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background: var(--bg-muted);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+        transition: background 0.3s, color 0.3s;
+    }
+
+    .backup-phase-icon i {
+        width: 15px;
+        height: 15px;
+    }
+
+    .backup-phase-icon.running {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: #bfdbfe;
+    }
+
+    .backup-phase-icon.done {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border-color: #bbf7d0;
+    }
+
+    .backup-phase-icon.error {
+        background: var(--red-bg);
+        color: var(--red-text);
+        border-color: #fecaca;
+    }
+
+    .backup-phase-label {
+        flex: 1;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .backup-phase-stat {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-align: right;
+    }
+
+    .backup-spinner {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border: 2px solid var(--blue-text);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .backup-result-banner {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        margin-top: 1rem;
+    }
+
+    /* --- Backup Summary Card --- */
+    .backup-summary-card {
+        display: none;
+        margin-top: 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .backup-summary-card.visible {
+        display: block;
+    }
+
+    .backup-summary-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: var(--green-bg);
+        border-bottom: 1px solid #bbf7d0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: var(--green-text);
+    }
+
+    .backup-summary-header.has-failures {
+        background: var(--yellow-bg);
+        border-color: #fde68a;
+        color: var(--yellow-text);
+    }
+
+    .backup-summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+    }
+
+    .backup-summary-table th {
+        padding: 6px 14px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        background: var(--bg-muted);
+        border-bottom: 1px solid var(--border);
+        text-align: right;
+    }
+
+    .backup-summary-table th:first-child { text-align: left; }
+
+    .backup-summary-table td {
+        padding: 7px 14px;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border);
+        text-align: right;
+    }
+
+    .backup-summary-table td:first-child { text-align: left; font-weight: 500; }
+
+    .backup-summary-table tr:last-child td {
+        border-bottom: none;
+        font-weight: 700;
+        background: var(--bg-muted);
+    }
+
+    /* --- Circular Progress Ring --- */
+    .progress-ring {
+        width: 32px;
+        height: 32px;
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring circle {
+        fill: none;
+        stroke-width: 3;
+    }
+
+    .progress-ring .ring-bg {
+        stroke: #e5e7eb;
+    }
+
+    .progress-ring .ring-progress {
+        stroke: var(--blue-text);
+        stroke-linecap: round;
+        stroke-dasharray: 81.68;
+        stroke-dashoffset: 81.68;
+        transition: stroke-dashoffset 0.25s linear;
+    }
+
+    .progress-ring.done .ring-progress {
+        stroke: var(--green-text);
+    }
+
+    .progress-ring.error .ring-progress {
+        stroke: var(--red-text);
+    }
+
+    .progress-ring text {
+        font-weight: 600;
+        font-family: Inter, sans-serif;
+        fill: var(--text-primary);
+    }
+
+    .stat-moved  { color: var(--green-text); font-weight: 600; }
+    .stat-skip   { color: var(--text-secondary); }
+    .stat-fail   { color: var(--red-text); font-weight: 600; }
 </style>
 
 <div class="manager-wrapper">
@@ -611,6 +815,120 @@
     </div>
 </div>
 
+<div id="backup-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container bento-panel" style="padding: 0; width: 480px;">
+        <div class="modal-head" style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="database" style="width:18px; height:18px; color: var(--blue-text);"></i>
+            <span>Backup to Database</span>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Running backup for <strong id="backup-target-name" style="color: var(--text-primary);"></strong>
+                <span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);" id="backup-target-ip"></span>
+            </p>
+
+            <!-- Phase 1: Users -->
+            <div class="backup-phase">
+                <div class="backup-phase-icon" id="bp-users-icon">
+                    <i data-lucide="users"></i>
+                </div>
+                <div class="backup-phase-label">Phase 1 &mdash; Users</div>
+                <div class="backup-phase-stat" id="bp-users-stat">Waiting&hellip;</div>
+            </div>
+
+            <!-- Phase 2: Fingerprints -->
+            <div class="backup-phase">
+                <div class="backup-phase-icon" id="bp-fingers-icon">
+                    <i data-lucide="fingerprint"></i>
+                </div>
+                <div class="backup-phase-label">Phase 2 &mdash; Fingerprints</div>
+                <div class="backup-phase-stat" id="bp-fingers-stat">Waiting&hellip;</div>
+            </div>
+
+            <!-- Phase 3: Attendance -->
+            <div class="backup-phase">
+                <div class="backup-phase-icon" id="bp-attendance-icon">
+                    <i data-lucide="clock"></i>
+                </div>
+                <div class="backup-phase-label">Phase 3 &mdash; Attendance Logs</div>
+                <div class="backup-phase-stat" id="bp-attendance-stat">Waiting&hellip;</div>
+            </div>
+
+            <!-- Summary Card (shown on success) -->
+            <div class="backup-summary-card" id="backup-summary-card">
+                <div class="backup-summary-header" id="backup-summary-header">
+                    <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+                    <span id="backup-summary-title">Backup Complete</span>
+                </div>
+                <table class="backup-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Phase</th>
+                            <th>Moved</th>
+                            <th>Matched / Skipped</th>
+                            <th>Failed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Users</td>
+                            <td class="stat-moved" id="sum-users-moved">—</td>
+                            <td class="stat-skip"  id="sum-users-skip">—</td>
+                            <td class="stat-fail"  id="sum-users-fail">—</td>
+                        </tr>
+                        <tr>
+                            <td>Fingerprints</td>
+                            <td class="stat-moved" id="sum-fp-moved">—</td>
+                            <td class="stat-skip"  id="sum-fp-skip">—</td>
+                            <td class="stat-fail"  id="sum-fp-fail">—</td>
+                        </tr>
+                        <tr>
+                            <td>Attendance</td>
+                            <td class="stat-moved" id="sum-att-moved">—</td>
+                            <td class="stat-skip"  id="sum-att-skip">—</td>
+                            <td class="stat-fail"  id="sum-att-fail">—</td>
+                        </tr>
+                        <tr>
+                            <td>Total</td>
+                            <td class="stat-moved" id="sum-total-moved">—</td>
+                            <td class="stat-skip"  id="sum-total-skip">—</td>
+                            <td class="stat-fail"  id="sum-total-fail">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Error banner (shown on failure) -->
+            <div class="backup-result-banner alert-error" id="backup-error-banner">
+                <i data-lucide="alert-circle"></i>
+                <span id="backup-error-msg"></span>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="btn" id="backup-close-btn" onclick="closeBackupModal()" disabled>Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="confirm-backup-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container bento-panel" style="width: 400px; text-align: center; padding: 2rem;">
+        <div style="color: var(--blue-text); margin-bottom: 1rem; display: flex; justify-content: center;">
+            <i data-lucide="database" style="width: 48px; height: 48px;"></i>
+        </div>
+        <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Confirm Backup?</h3>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+            This will sync all users, fingerprints, and attendance logs from
+            <strong id="confirm-backup-name" style="color: var(--text-primary);"></strong> to the database.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" class="btn" onclick="closeConfirmBackupModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirm-backup-btn" onclick="confirmBackup()">
+                <i data-lucide="database" style="width:15px;height:15px;"></i> Start Backup
+            </button>
+        </div>
+    </div>
+</div>
+
 <div id="delete-modal" class="modal-overlay">
     <div class="modal-card pop-in-container bento-panel" style="width: 400px; text-align: center; padding: 2rem;">
         <div style="color: var(--red-text); margin-bottom: 1rem; display: flex; justify-content: center;">
@@ -634,10 +952,11 @@
 
 <script>
     let globalDevices = [];
+    let deviceIndex   = {};
     let currentSortCol = '';
     let sortAscending = true;
+    let isBackingUp   = false;
 
-    // Pagination State
     let currentPage = 1;
     const itemsPerPage = 10;
 
@@ -645,39 +964,34 @@
         lucide.createIcons();
         loadDevices();
         setupFormHandler();
-        startLiveSync(); // Initiates the background poller
+        startLiveSync();
 
-        // Search Listener - Resets to page 1 on search
         document.getElementById('searchInput').addEventListener('input', function (e) {
             currentPage = 1;
             renderTable(e.target.value);
         });
     });
 
-    // --- Expert Background Poller (Live Sync) ---
     function startLiveSync() {
         setInterval(() => {
             fetch('/api/get-devices')
                 .then(response => response.json())
                 .then(res => {
                     if (res.status === 'success') {
-                        // Mathematically hash/compare the strings to avoid DOM flickering
                         const newDataString = JSON.stringify(res.data);
                         const oldDataString = JSON.stringify(globalDevices);
-
                         if (newDataString !== oldDataString) {
-                            globalDevices = res.data; // Update internal memory
-                            // Re-render, completely preserving user's search and pagination state
-                            renderTable(document.getElementById('searchInput').value);
+                            globalDevices = res.data;
+                            if (!isBackingUp) {
+                                renderTable(document.getElementById('searchInput').value);
+                            }
                         }
                     }
                 })
-                // Fails silently in the background if network drops momentarily 
                 .catch(() => { });
-        }, 3000); // Polls every 3 seconds
+        }, 3000);
     }
 
-    // --- Alert Helpers ---
     function showPageAlert(msg, type = "error") {
         const box = document.getElementById('page-alert');
         box.className = 'alert-box alert-' + type;
@@ -695,7 +1009,6 @@
         lucide.createIcons();
     }
 
-    // --- 1. Fetch and Display ---
     function loadDevices() {
         fetch('/api/get-devices')
             .then(response => response.json())
@@ -713,7 +1026,6 @@
             });
     }
 
-    // --- 2. Render Logic (Search, Sort, Pagination) ---
     function renderTable(searchTerm = '') {
         const tbody = document.getElementById('device-tbody');
         tbody.innerHTML = '';
@@ -754,37 +1066,40 @@
         }
 
         paginatedData.forEach(device => {
+            const dataKey = `dev-${device.device_id}`;
+            deviceIndex[dataKey] = device;
+
             let badgeClass = 'badge-neutral';
             if (device.chain_type === 'RUSTANS') badgeClass = 'badge-rustans';
             else if (device.chain_type === 'RDS') badgeClass = 'badge-rds';
 
-            const safeDeviceData = JSON.stringify(device).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-            const safeName = device.bcc.replace(/'/g, "\\'");
-
-            const tr = `
-                <tr>
-                    <td><div class="device-name">${device.bcc}</div></td>
-                    <td><span class="badge ${badgeClass}"><span class="badge-dot"></span>${device.chain_type}</span></td>
-                    <td><span class="device-ip">${device.ip_address}</span></td>
-                    <td>
-                        <div style="display: flex; gap: 4px; justify-content: flex-end;">
-                            <button type="button" class="action-btn" onclick='openModal(${safeDeviceData})' title="Edit">
-                                <i data-lucide="edit-2"></i>
-                            </button>
-                            <button type="button" class="action-btn danger" onclick="openDeleteModal(${device.device_id}, '${safeName}')" title="Delete">
-                                <i data-lucide="trash-2"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><div class="device-name"></div></td>
+                <td><span class="badge ${badgeClass}"><span class="badge-dot"></span><span class="badge-label"></span></span></td>
+                <td><span class="device-ip"></span></td>
+                <td>
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                        <button type="button" class="action-btn backup" title="Backup to Database"><i data-lucide="database"></i></button>
+                        <button type="button" class="action-btn btn-edit" title="Edit"><i data-lucide="edit-2"></i></button>
+                        <button type="button" class="action-btn danger btn-delete" title="Delete"><i data-lucide="trash-2"></i></button>
+                    </div>
+                </td>
             `;
-            tbody.insertAdjacentHTML('beforeend', tr);
+            tr.querySelector('.device-name').textContent = device.bcc;
+            tr.querySelector('.badge-label').textContent = device.chain_type;
+            tr.querySelector('.device-ip').textContent   = device.ip_address;
+
+            tr.querySelector('.action-btn.backup').addEventListener('click', () => openConfirmBackupModal(deviceIndex[dataKey]));
+            tr.querySelector('.btn-edit').addEventListener('click',          () => openModal(deviceIndex[dataKey]));
+            tr.querySelector('.btn-delete').addEventListener('click',        () => openDeleteModal(device.device_id, device.bcc));
+
+            tbody.appendChild(tr);
         });
 
         lucide.createIcons();
     }
 
-    // --- 3. Interaction Handlers ---
     function changePage(direction) {
         currentPage += direction;
         renderTable(document.getElementById('searchInput').value);
@@ -797,18 +1112,14 @@
             currentSortCol = columnKey;
             sortAscending = true;
         }
-
         currentPage = 1;
-
         document.querySelectorAll('.sort-icon').forEach(icon => {
             icon.setAttribute('data-lucide', 'chevrons-up-down');
             icon.classList.remove('sort-active');
         });
-
         const activeIcon = document.getElementById('icon-' + iconIndex);
         activeIcon.setAttribute('data-lucide', sortAscending ? 'chevron-up' : 'chevron-down');
         activeIcon.classList.add('sort-active');
-
         lucide.createIcons();
         renderTable(document.getElementById('searchInput').value);
     }
@@ -816,7 +1127,6 @@
     function openModal(device = null) {
         const form = document.getElementById('device-form');
         document.getElementById('modal-alert').style.display = 'none';
-
         if (device) {
             document.getElementById('device_id').value = device.device_id;
             document.getElementById('bcc').value = device.bcc;
@@ -840,7 +1150,6 @@
         const form = document.getElementById('device-form');
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-
             document.getElementById('modal-alert').style.display = 'none';
             const submitBtn = form.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerText;
@@ -848,7 +1157,6 @@
             submitBtn.disabled = true;
 
             const formData = new FormData(form);
-
             fetch('/api/save-device', {
                 method: 'POST',
                 body: formData
@@ -874,7 +1182,6 @@
         });
     }
 
-    // --- 5. Hold-to-Delete Logic ---
     let deleteTimeout;
     let deviceToDelete = null;
 
@@ -897,11 +1204,9 @@
     function startHold(e) {
         if (!deviceToDelete) return;
         if (e.cancelable) e.preventDefault();
-
         holdBtn.style.transform = 'scale(0.95)';
         holdProgress.style.transition = 'width 3s linear';
         holdProgress.style.width = '100%';
-
         deleteTimeout = setTimeout(() => {
             executeDelete();
         }, 3000);
@@ -917,7 +1222,6 @@
     holdBtn.addEventListener('mousedown', startHold);
     holdBtn.addEventListener('mouseup', resetHold);
     holdBtn.addEventListener('mouseleave', resetHold);
-
     holdBtn.addEventListener('touchstart', startHold, { passive: false });
     holdBtn.addEventListener('touchend', resetHold);
     holdBtn.addEventListener('touchcancel', resetHold);
@@ -925,10 +1229,8 @@
     function executeDelete() {
         const deviceId = deviceToDelete;
         closeDeleteModal();
-
         const formData = new FormData();
         formData.append('device_id', deviceId);
-
         fetch('/api/delete-device', {
             method: 'POST',
             body: formData
@@ -946,6 +1248,277 @@
                 console.error("Delete error:", err);
                 showPageAlert("Failed to communicate with the server.", "error");
             });
+    }
+
+    let pendingBackupDevice = null;
+
+    function openConfirmBackupModal(device) {
+        pendingBackupDevice = device;
+        document.getElementById('confirm-backup-name').innerText = `${device.bcc} (${device.ip_address})`;
+        document.getElementById('confirm-backup-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeConfirmBackupModal() {
+        document.getElementById('confirm-backup-modal').style.display = 'none';
+        pendingBackupDevice = null;
+    }
+
+    function confirmBackup() {
+        if (!pendingBackupDevice) return;
+        const device = pendingBackupDevice;
+        closeConfirmBackupModal();
+        triggerBackup(device);
+    }
+
+    function triggerBackup(device) {
+        const phases = ['users', 'fingers', 'attendance'];
+        const icons  = { users: 'users', fingers: 'fingerprint', attendance: 'clock' };
+        phases.forEach(p => {
+            const iconEl = document.getElementById(`bp-${p}-icon`);
+            iconEl.className = 'backup-phase-icon';
+            iconEl.innerHTML = `<i data-lucide="${icons[p]}"></i>`;
+            document.getElementById(`bp-${p}-stat`).innerText = 'Waiting…';
+        });
+        document.getElementById('backup-summary-card').classList.remove('visible');
+        document.getElementById('backup-error-banner').style.display = 'none';
+        document.getElementById('backup-close-btn').disabled = true;
+        isBackingUp = true;
+
+        document.getElementById('backup-target-name').innerText = device.bcc + ' ';
+        document.getElementById('backup-target-ip').innerText   = `(${device.ip_address})`;
+        document.getElementById('backup-modal').style.display = 'flex';
+        lucide.createIcons();
+
+        animatePhase('users', 1200, () => {
+            animatePhase('fingers', 1500, () => {
+                animatePhase('attendance', 1800);
+            });
+        });
+
+        const formData = new FormData();
+        formData.append('device_id',  device.device_id);
+        formData.append('ip_address', device.ip_address);
+        formData.append('comms_key',  device.comms_key);
+        formData.append('bcc',        device.bcc);
+
+        fetch('/api/backup-device', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    const s = res.summary;
+                    setPhaseState('users', 'done');
+                    document.getElementById('bp-users-stat').innerText = `${s.users.synced} synced · ${s.users.matched} matched`;
+                    setPhaseState('fingers', 'done');
+                    document.getElementById('bp-fingers-stat').innerText = `${s.fingerprints.new} new · ${s.fingerprints.skipped} skipped`;
+                    setPhaseState('attendance', 'done');
+                    document.getElementById('bp-attendance-stat').innerText = `${s.attendance.new} new · ${s.attendance.skipped} skipped`;
+
+                    const uM = s.users.synced,        uS = s.users.matched,       uF = s.users.failed        || 0;
+                    const fM = s.fingerprints.new,    fS = s.fingerprints.skipped, fF = s.fingerprints.failed || 0;
+                    const aM = s.attendance.new,      aS = s.attendance.skipped,   aF = s.attendance.failed   || 0;
+                    const tM = uM + fM + aM;
+                    const tS = uS + fS + aS;
+                    const tF = uF + fF + aF;
+
+                    document.getElementById('sum-users-moved').innerText = uM;
+                    document.getElementById('sum-users-skip').innerText  = uS;
+                    document.getElementById('sum-users-fail').innerText  = uF;
+                    document.getElementById('sum-fp-moved').innerText    = fM;
+                    document.getElementById('sum-fp-skip').innerText     = fS;
+                    document.getElementById('sum-fp-fail').innerText     = fF;
+                    document.getElementById('sum-att-moved').innerText   = aM;
+                    document.getElementById('sum-att-skip').innerText    = aS;
+                    document.getElementById('sum-att-fail').innerText    = aF;
+                    document.getElementById('sum-total-moved').innerText = tM;
+                    document.getElementById('sum-total-skip').innerText  = tS;
+                    document.getElementById('sum-total-fail').innerText  = tF;
+
+                    const header = document.getElementById('backup-summary-header');
+                    const titleEl = document.getElementById('backup-summary-title');
+                    // Safely update the header icon: change data-lucide on the existing element (now an SVG)
+                    const iconElem = header.querySelector('[data-lucide]');
+                    if (tF > 0) {
+                        header.classList.add('has-failures');
+                        if (iconElem) iconElem.setAttribute('data-lucide', 'alert-triangle');
+                        titleEl.innerText = `Backup Complete — ${tF} record${tF !== 1 ? 's' : ''} failed`;
+                    } else {
+                        header.classList.remove('has-failures');
+                        if (iconElem) iconElem.setAttribute('data-lucide', 'check-circle');
+                        titleEl.innerText = 'Backup Complete';
+                    }
+                    // Re-render the icon
+                    lucide.createIcons({ elements: [iconElem] });
+
+                    document.getElementById('backup-summary-card').classList.add('visible');
+                    showPageAlert(`Backup completed for ${device.bcc}.`, 'success');
+                } else {
+                    phases.forEach(p => {
+                        if (document.getElementById(`bp-${p}-icon`).classList.contains('running')) {
+                            setPhaseState(p, 'error');
+                            document.getElementById(`bp-${p}-stat`).innerText = 'Failed';
+                        }
+                    });
+                    document.getElementById('backup-error-msg').innerText = res.message || 'An unknown error occurred.';
+                    document.getElementById('backup-error-banner').style.display = 'flex';
+                    showPageAlert(`Backup failed for ${device.bcc}: ${res.message}`, 'error');
+                }
+            })
+            .catch(err => {
+                phases.forEach(p => setPhaseState(p, 'error'));
+                document.getElementById('backup-error-msg').innerText = 'Network error — could not reach the server.';
+                document.getElementById('backup-error-banner').style.display = 'flex';
+                console.error('Backup error:', err);
+            })
+            .finally(() => {
+                isBackingUp = false;
+                document.getElementById('backup-close-btn').disabled = false;
+                lucide.createIcons();
+            });
+    }
+
+    function setPhaseState(phase, state, progress = 0) {
+        const iconEl = document.getElementById(`bp-${phase}-icon`);
+        iconEl.className = `backup-phase-icon ${state}`;
+
+        const radius = 13;
+        const circumference = 2 * Math.PI * radius;
+        const offset = circumference - (progress / 100) * circumference;
+
+        if (state === 'running') {
+            iconEl.innerHTML = `
+                <svg class="progress-ring" width="32" height="32">
+
+                    <circle
+                        class="ring-bg"
+                        cx="16"
+                        cy="16"
+                        r="${radius}">
+                    </circle>
+
+                    <circle
+                        class="ring-progress"
+                        cx="16"
+                        cy="16"
+                        r="${radius}"
+                        style="
+                            stroke-dasharray:${circumference};
+                            stroke-dashoffset:${offset};
+                        ">
+                    </circle>
+
+                    <text
+                        x="16"
+                        y="18"
+                        text-anchor="middle"
+                        font-size="8"
+                        fill="currentColor"
+                        transform="rotate(90 16 16)">
+                        ${Math.round(progress)}
+                    </text>
+
+                </svg>
+            `;
+        }
+        else if (state === 'done') {
+            iconEl.innerHTML = `
+                <svg class="progress-ring done" width="32" height="32">
+
+                    <circle
+                        class="ring-bg"
+                        cx="16"
+                        cy="16"
+                        r="${radius}">
+                    </circle>
+
+                    <circle
+                        class="ring-progress"
+                        cx="16"
+                        cy="16"
+                        r="${radius}"
+                        style="
+                            stroke-dasharray:${circumference};
+                            stroke-dashoffset:0;
+                        ">
+                    </circle>
+
+                    <text
+                        x="16"
+                        y="18"
+                        text-anchor="middle"
+                        font-size="8"
+                        fill="currentColor"
+                        transform="rotate(90 16 16)">
+                        ✓
+                    </text>
+
+                </svg>
+            `;
+        }
+        else if (state === 'error') {
+            iconEl.innerHTML = `
+                <svg class="progress-ring error" width="32" height="32">
+
+                    <circle
+                        class="ring-bg"
+                        cx="16"
+                        cy="16"
+                        r="${radius}">
+                    </circle>
+
+                    <circle
+                        class="ring-progress"
+                        cx="16"
+                        cy="16"
+                        r="${radius}"
+                        style="
+                            stroke-dasharray:${circumference};
+                            stroke-dashoffset:${circumference * 0.25};
+                        ">
+                    </circle>
+
+                    <text
+                        x="16"
+                        y="18"
+                        text-anchor="middle"
+                        font-size="8"
+                        fill="currentColor"
+                        transform="rotate(90 16 16)">
+                        ✕
+                    </text>
+
+                </svg>
+            `;
+        }
+    }
+
+    function animatePhase(phase, duration = 1500, callback = null) {
+        let progress = 0;
+
+        const interval = setInterval(() => {
+
+            progress += 5;
+
+            if (progress >= 95) {
+                clearInterval(interval);
+
+                setPhaseState(phase, 'running', 95);
+
+                if (callback) {
+                    callback();
+                }
+
+                return;
+            }
+
+            setPhaseState(phase, 'running', progress);
+
+        }, duration / 20);
+    }
+
+    function closeBackupModal() {
+        if (isBackingUp) return;
+        document.getElementById('backup-modal').style.display = 'none';
     }
 </script>
 {% endblock %}

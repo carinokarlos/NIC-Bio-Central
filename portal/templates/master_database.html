@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+
+<style>
+    /* --- Shared Light Theme Variables --- */
+    :root {
+        --bg-page: #f3f4f6;
+        --bg-surface: #ffffff;
+        --bg-muted: #f9fafb;
+        --bg-hover: #f3f4f6;
+        --border: #e5e7eb;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --text-muted: #9ca3af;
+        --blue-bg: #eff6ff;
+        --blue-text: #1d4ed8;
+        --eggshell: #f0ead6;
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --bento-radius: 20px;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    body {
+        background-color: var(--bg-page) !important;
+    }
+
+    /* --- Light Bento Grid Theme --- */
+    .manager-wrapper {
+        flex: 1;
+        width: 100%;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .bento-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto 2rem auto;
+    }
+
+    .bento-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--bento-radius);
+        box-shadow: var(--shadow-sm);
+        padding: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bento-panel:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    .span-full {
+        grid-column: 1 / -1;
+    }
+
+    /* --- Pop-In Animation --- */
+    @keyframes popIn {
+        0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .pop-in-container { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .stagger-1 { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.1s; opacity: 0; }
+    .stagger-2 { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.2s; opacity: 0; }
+
+    /* --- Typography --- */
+    .welcome-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        margin-top: 0;
+    }
+
+    .welcome-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 0;
+    }
+
+    /* --- Filter Controls Styling --- */
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-label i {
+        width: 14px;
+        height: 14px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 0.875rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .form-input:focus {
+        border-color: var(--blue-text);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
+    /* --- Select2 Light Theme Overrides (Updated for Multiple) --- */
+    .select2-container--default .select2-selection--multiple {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        background-color: var(--bg-surface) !important;
+        min-height: 38px !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: var(--bg-muted);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text-primary);
+        font-size: 0.8125rem;
+        margin-top: 5px;
+    }
+    .select2-dropdown {
+        border-color: var(--border) !important;
+        box-shadow: var(--shadow-md);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+    .select2-results__option {
+        font-size: 0.875rem;
+        color: var(--text-primary);
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: var(--blue-bg) !important;
+        color: var(--blue-text) !important;
+    }
+
+    /* --- DataTables Bento Grid Overrides --- */
+    .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto;
+    }
+
+    table.dataTable {
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
+        border-bottom: 1px solid var(--border);
+    }
+
+    table.dataTable thead th {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 12px 16px !important;
+        text-align: left;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border) !important;
+    }
+
+    table.dataTable tbody tr {
+        border-bottom: 1px solid var(--border) !important;
+        background-color: var(--bg-surface) !important;
+    }
+
+    table.dataTable tbody tr:nth-child(even) {
+        background-color: var(--bg-muted) !important;
+    }
+
+    table.dataTable tbody tr:hover td {
+        background: var(--bg-hover) !important;
+    }
+
+    table.dataTable tbody td {
+        padding: 12px 16px !important;
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+        vertical-align: middle;
+        border-top: none !important;
+    }
+
+    /* DataTables Controls */
+    .dataTables_wrapper .dataTables_info, 
+    .dataTables_wrapper .dataTables_length label, 
+    .dataTables_wrapper .dataTables_filter label {
+        font-size: 0.8125rem;
+        color: var(--text-secondary) !important;
+    }
+
+    .dataTables_filter input {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 8px 16px !important;
+        font-size: 0.875rem;
+        outline: none;
+        min-width: 300px;
+        transition: border-color .15s, box-shadow .15s;
+    }
+    
+    .dataTables_filter input:focus {
+        border-color: var(--blue-text) !important;
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1) !important;
+    }
+
+    .dt-buttons .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        border: 1px solid var(--border) !important;
+        background: var(--bg-surface) !important;
+        color: var(--text-primary) !important;
+        transition: background .15s;
+        margin-right: 8px;
+    }
+
+    .dt-buttons .btn:hover {
+        background: var(--bg-muted) !important;
+    }
+
+    .dt-buttons .btn i {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .dataTables_paginate .paginate_button {
+        font-size: 0.8125rem;
+        padding: 5px 10px !important;
+        border-radius: var(--radius-md) !important;
+        border: 1px solid transparent !important;
+    }
+    
+    .dataTables_paginate .paginate_button.current {
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border) !important;
+        font-weight: 600;
+    }
+
+    /* --- NEW Expandable Row & Selection Styles --- */
+    td.details-control { cursor: pointer; text-align: center; color: var(--blue-text); }
+    .child-table-wrapper { background: var(--bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin: 0.5rem 0; }
+    .child-table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: var(--shadow-sm); border-radius: var(--radius-sm); overflow: hidden;}
+    .child-table th, .child-table td { padding: 8px 12px; border: 1px solid var(--border); font-size: 0.75rem; text-align: left; }
+    .child-table th { background: var(--bg-muted); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; }
+    .custom-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--blue-text); }
+</style>
+
+<div class="manager-wrapper">
+  <div class="bento-layout">
+    
+    <div class="bento-panel stagger-1 span-full">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+        
+        <div style="flex: 1; min-width: 300px;">
+          <h1 class="welcome-title">Master Database</h1>
+          <p class="welcome-subtitle">Select employees to view or export their full historical logs.</p>
+        </div>
+
+        <div class="filter-grid" style="flex: 2; margin-top: 0;">
+          <div class="form-group">
+            <label class="form-label"><i data-lucide="calendar"></i> Date From</label>
+            <input type="date" id="date-from" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i data-lucide="calendar"></i> Date To</label>
+            <input type="date" id="date-to" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i data-lucide="map-pin"></i> Location</label>
+            <select id="location-filter" class="select2" multiple="multiple">
+              {% for loc in locations %}
+                <option value="{{ loc }}">{{ loc }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="table-container pop-in-container stagger-2 span-full">
+      <div class="bento-panel">
+        <table id="masterTable" class="audit-table">
+          <thead>
+            <tr>
+              <th style="width: 30px;"><input type="checkbox" id="selectAll" class="custom-cb"></th>
+              <th style="width: 30px;"></th> 
+              <th>Emp ID</th>
+              <th>Name</th>
+              <th>Latest Location</th>
+              <th>Latest Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+              {% for log in logs %}
+              <tr>
+                <td><input type="checkbox" class="emp-cb custom-cb" value="{{ log.employee_code }}"></td>
+                <td class="details-control"><i data-lucide="chevron-right"></i></td>
+                <td><span style="font-family: ui-monospace, monospace; color: var(--text-secondary);">{{ log.employee_code }}</span></td>
+                <td style="font-weight: 500;">{{ log.employee_name or 'UNKNOWN' }}</td>
+                <td>{{ log.location_name or 'UNREGISTERED' }}</td>
+                <td>{{ log.punch_time }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+
+    // 1. Initialize Select2 for Multiple selection
+    $('#location-filter').select2({
+        placeholder: "Select locations...",
+        allowClear: true,
+        width: '100%'
+    });
+
+    // 2. Initialize DataTable
+    var table = $('#masterTable').DataTable({
+        pageLength: 25,
+        columnDefs: [
+            { targets: [0, 1], orderable: false } // Disable sorting on checkboxes and chevron
+        ],
+        order: [[ 5, 'desc' ]], // Default sort by Latest Timestamp
+        dom: '<"row align-items-center mb-3"<"col-md-6 d-flex flex-wrap gap-2"B><"col-md-6 d-flex justify-content-end"f>>rt<"row align-items-center mt-3"<"col-md-6"i><"col-md-6 d-flex justify-content-end"p>>',
+        buttons: [
+            // Custom API Export Button injected natively via DataTables
+            {
+                text: '<i data-lucide="download"></i> Export Selected',
+                className: 'btn custom-export-btn',
+                action: function ( e, dt, node, config ) {
+                    executeCustomExport(node);
+                }
+            },
+            { extend: 'csv', text: '<i data-lucide="file-spreadsheet"></i> CSV (View)', className: 'btn' },
+            { extend: 'print', text: '<i data-lucide="printer"></i> Print', className: 'btn' }
+        ],
+        language: {
+            search: "",
+            searchPlaceholder: "Search ID or Name..."
+        },
+        drawCallback: function(settings) {
+            lucide.createIcons();
+        }
+    });
+
+    lucide.createIcons();
+
+    // --- CHECKBOX LOGIC ---
+    $('#selectAll').on('click', function(){
+        var rows = table.rows({ 'search': 'applied' }).nodes();
+        $('input[type="checkbox"].emp-cb', rows).prop('checked', this.checked);
+    });
+
+    $('#masterTable tbody').on('change', 'input[type="checkbox"].emp-cb', function(){
+        if(!this.checked){
+            var el = $('#selectAll').get(0);
+            if(el && el.checked && ('indeterminate' in el)){
+                el.indeterminate = true;
+            }
+        }
+    });
+
+    // --- DRILL DOWN LOGIC ---
+    function formatChildRow(data) {
+        let html = '<div class="child-table-wrapper"><div style="margin-bottom:8px; font-weight:600; font-size:0.85rem; color: var(--text-primary);">Historical Logs</div><table class="child-table">';
+        html += '<thead><tr><th>Log ID</th><th>Location</th><th>Timestamp</th><th>Punch Type</th><th>Verify Type</th></tr></thead><tbody>';
+        
+        if (data.length === 0) {
+            html += '<tr><td colspan="5" style="text-align:center;">No historical logs found.</td></tr>';
+        } else {
+            data.forEach(function(log) {
+                html += `<tr>
+                    <td>${log.log_id}</td>
+                    <td>${log.location_name || 'UNREGISTERED'}</td>
+                    <td>${log.punch_time}</td>
+                    <td>${log.punch_type}</td>
+                    <td>${log.verify_type}</td>
+                </tr>`;
+            });
+        }
+        html += '</tbody></table></div>';
+        return html;
+    }
+
+    $('#masterTable tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = table.row(tr);
+        var empCode = $(this).next().text(); // Grab Emp ID from adjacent cell
+
+        if (row.child.isShown()) {
+            row.child.hide();
+            tr.removeClass('shown');
+            $(this).html('<i data-lucide="chevron-right"></i>');
+            lucide.createIcons();
+        } else {
+            $(this).html('<i data-lucide="loader" class="fa-spin"></i>');
+            lucide.createIcons();
+            
+            $.ajax({
+                url: '/api/employee-logs/' + empCode,
+                method: 'GET',
+                success: function(response) {
+                    if(response.status === 'success') {
+                        row.child(formatChildRow(response.data)).show();
+                        tr.addClass('shown');
+                        $(tr).find('td.details-control').html('<i data-lucide="chevron-down"></i>');
+                    } else {
+                        alert('Error loading data.');
+                        $(tr).find('td.details-control').html('<i data-lucide="chevron-right"></i>');
+                    }
+                    lucide.createIcons();
+                },
+                error: function() {
+                    alert('Network error while fetching logs.');
+                    $(tr).find('td.details-control').html('<i data-lucide="chevron-right"></i>');
+                    lucide.createIcons();
+                }
+            });
+        }
+    });
+
+    // --- EXPORT API CALL ---
+    function executeCustomExport(btnNode) {
+        var selectedEmps = [];
+        table.$('input[type="checkbox"].emp-cb').each(function(){
+            if(this.checked) selectedEmps.push($(this).val());
+        });
+
+        if (selectedEmps.length === 0) {
+            alert('Please select at least one employee checkbox to export.');
+            return;
+        }
+
+        var btn = $(btnNode);
+        var originalText = btn.html();
+        btn.html('<i data-lucide="loader" class="fa-spin"></i> Processing...');
+        lucide.createIcons();
+
+        var payload = {
+            employees: selectedEmps,
+            date_from: $('#date-from').val(),
+            date_to: $('#date-to').val(),
+            locations: $('#location-filter').val() // Captures array of locations
+        };
+
+        fetch('/api/export-master-logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Export failed");
+            return response.blob();
+        })
+        .then(blob => {
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = "BioCentral_Export.csv";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            btn.html(originalText);
+            lucide.createIcons();
+        })
+        .catch(err => {
+            alert(err);
+            btn.html(originalText);
+            lucide.createIcons();
+        });
+    }
+
+    // --- FILTERING LOGIC ---
+    $.fn.dataTable.ext.search.push(
+        function(settings, data, dataIndex) {
+            var min = $('#date-from').val();
+            var max = $('#date-to').val();
+            var dateStr = data[5] ? data[5].split(' ')[0] : ""; // Index 5 is Latest Timestamp
+
+            if (min === "" && max === "") return true;
+            if (min !== "" && dateStr < min) return false;
+            if (max !== "" && dateStr > max) return false;
+            return true;
+        }
+    );
+
+    $('#date-from, #date-to').on('change', function() {
+        table.draw();
+    });
+
+    // Multi-select Regex search for DataTables
+    $('#location-filter').on('change', function() {
+        var selectedLocations = $(this).val(); // Returns an array
+        if (selectedLocations && selectedLocations.length > 0) {
+            // Build a regex like: ^(Kampri|HO Makati 2)$
+            var regexStr = '^(' + selectedLocations.join('|') + ')$';
+            table.column(4).search(regexStr, true, false).draw(); // Index 4 is Latest Location
+        } else {
+            table.column(4).search('', true, false).draw();
+        }
+    });
+});
+</script>
+{% endblock %}
