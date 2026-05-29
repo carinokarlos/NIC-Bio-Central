@@ -74,3 +74,6 @@ app.register_blueprint(move_registration_bp)
 
 from routes.master_db import master_db_bp
 app.register_blueprint(master_db_bp)
+
+from routes.sync_to_new_device import sync_to_new_device_bp
+app.register_blueprint(sync_to_new_device_bp)

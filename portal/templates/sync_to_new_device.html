@@ -1,0 +1,1430 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════
+     SYNC TO NEW DEVICE — Master Stylesheet
+     Theme: Clean light dashboard matching the existing app design language
+     (mirrors move_registration.html variables + adds sync-specific tokens)
+  ═══════════════════════════════════════════════════════════════════════ */
+  :root {
+    --bg-page:     #f0f2f5;
+    --bg-surface:  #ffffff;
+    --bg-muted:    #f9fafb;
+    --border:      #e5e7eb;
+    --text-primary:   #111827;
+    --text-secondary: #6b7280;
+    --text-muted:     #9ca3af;
+
+    --accent:      #3b82f6;
+    --accent-light:#eff6ff;
+    --success:     #10b981;
+    --success-light:#f0fdf4;
+    --warning:     #f59e0b;
+    --warning-light:#fffbeb;
+    --error:       #ef4444;
+    --error-light: #fef2f2;
+    --cyan:        #06b6d4;
+    --cyan-light:  #ecfeff;
+    --purple:      #8b5cf6;
+    --purple-light:#f5f3ff;
+
+    --shadow-sm:   0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-md:   0 4px 12px rgba(0,0,0,.08);
+    --radius:      16px;
+    --radius-sm:   10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--bg-page) !important;
+    color: var(--text-primary) !important;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* ── Layout ── */
+  .sync-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    min-height: 100vh;
+    padding: 1.25rem 1.5rem 3rem;
+  }
+
+  .sync-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1260px;
+    gap: 1rem;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes popIn {
+    0%   { opacity: 0; transform: scale(.93) translateY(20px); }
+    100% { opacity: 1; transform: scale(1)   translateY(0); }
+  }
+  @keyframes spin  { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .anim-fade  { animation: fadeInDown .5s ease-out forwards; }
+  .anim-pop   { animation: popIn .55s cubic-bezier(.16,1,.3,1) forwards; }
+
+  /* ── Page Header ── */
+  .page-header-bar {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    gap: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    animation: fadeInDown .5s ease-out forwards;
+  }
+
+  .header-icon-wrap {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, #06b6d4, #3b82f6);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(6,182,212,.35);
+    flex-shrink: 0;
+  }
+  .header-icon-wrap i { font-size: 1.35rem; color: #fff; }
+
+  .page-title  { font-size: 1.3rem; font-weight: 700; margin: 0; }
+  .page-sub    { font-size: .82rem; color: var(--text-secondary); margin: 3px 0 0; }
+
+  .hdr-divider { width: 1px; height: 38px; background: var(--border); }
+
+  /* ── Step Chips ── */
+  .step-chips { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+  .step-chip {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 13px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--bg-muted);
+    font-size: .76rem; font-weight: 600;
+    color: var(--text-secondary);
+    transition: all .25s;
+    white-space: nowrap;
+  }
+  .step-chip .chip-num {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .68rem; font-weight: 700; transition: all .25s;
+  }
+  .step-chip.active  { border-color: #bfdbfe; background: var(--accent-light); color: #1d4ed8; }
+  .step-chip.active  .chip-num { border-color: #1d4ed8; color: #1d4ed8; }
+  .step-chip.done    { border-color: #bbf7d0; background: var(--success-light); color: #15803d; }
+  .step-chip.done    .chip-num { border-color: #15803d; color: #15803d; }
+  .step-arrow { color: var(--text-muted); font-size: .75rem; margin: 0 2px; }
+
+  /* ── Stat Cards ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .85rem;
+  }
+
+  .stat-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: .9rem;
+    box-shadow: var(--shadow-sm);
+    animation: popIn .55s cubic-bezier(.16,1,.3,1) both;
+  }
+  .stat-card:nth-child(1) { animation-delay: .05s; }
+  .stat-card:nth-child(2) { animation-delay: .1s; }
+  .stat-card:nth-child(3) { animation-delay: .15s; }
+  .stat-card:nth-child(4) { animation-delay: .2s; }
+
+  .stat-icon {
+    width: 42px; height: 42px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .stat-icon.blue   { background: var(--accent-light);  color: var(--accent); }
+  .stat-icon.green  { background: var(--success-light); color: var(--success); }
+  .stat-icon.cyan   { background: var(--cyan-light);    color: var(--cyan); }
+  .stat-icon.purple { background: var(--purple-light);  color: var(--purple); }
+
+  .stat-val  { font-size: 1.55rem; font-weight: 800; line-height: 1; color: var(--text-primary); }
+  .stat-label{ font-size: .73rem; color: var(--text-secondary); margin-top: 3px; }
+
+  /* ── Main Panel Grid ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .panel-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    display: flex; flex-direction: column; gap: .85rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: .85rem;
+  }
+  .panel-title-group { display: flex; align-items: center; gap: 9px; }
+  .panel-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem;
+  }
+  .pi-blue   { background: var(--accent-light);  color: var(--accent); }
+  .pi-cyan   { background: var(--cyan-light);    color: var(--cyan); }
+  .pi-green  { background: var(--success-light); color: var(--success); }
+  .pi-purple { background: var(--purple-light);  color: var(--purple); }
+
+  .panel-title { margin: 0; font-size: .97rem; font-weight: 700; }
+
+  /* ── Table Styles ── */
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+
+  table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+  thead tr { background: var(--bg-muted); }
+  thead th {
+    padding: 9px 12px; text-align: left;
+    font-size: .72rem; font-weight: 600;
+    color: var(--text-secondary); text-transform: uppercase; letter-spacing: .7px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+    cursor: pointer;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg-muted); }
+  tbody tr.selected-row { background: var(--accent-light); }
+  tbody td { padding: 10px 12px; color: var(--text-primary); vertical-align: middle; }
+
+  /* ── Online / Offline Badges ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: .72rem; font-weight: 600;
+  }
+  .badge-online  { background: var(--success-light); color: #15803d; border: 1px solid #bbf7d0; }
+  .badge-offline { background: var(--error-light);   color: #b91c1c; border: 1px solid #fecaca; }
+  .badge-synced  { background: var(--accent-light);  color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .badge-warn    { background: var(--warning-light); color: #92400e; border: 1px solid #fde68a; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .dot-green  { background: var(--success); }
+  .dot-red    { background: var(--error); }
+  .dot-blue   { background: var(--accent); }
+  .dot-pulse  { animation: pulse 1.5s ease-in-out infinite; }
+
+  /* ── Inputs & Buttons ── */
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-muted); border: 1px solid var(--border);
+    border-radius: 9px; padding: 7px 12px;
+    transition: border-color .2s;
+  }
+  .search-box:focus-within { border-color: var(--accent); }
+  .search-box i { color: var(--text-muted); font-size: .85rem; }
+  .search-box input {
+    border: none; background: transparent; outline: none;
+    font-size: .85rem; color: var(--text-primary); width: 100%;
+  }
+  .search-box input::placeholder { color: var(--text-muted); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px; border-radius: 9px; border: none;
+    font-size: .84rem; font-weight: 600; cursor: pointer;
+    transition: all .2s; white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 2px 8px rgba(59,130,246,.3);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #2563eb; box-shadow: 0 4px 14px rgba(59,130,246,.4);
+  }
+  .btn-success {
+    background: var(--success); color: #fff;
+    box-shadow: 0 2px 8px rgba(16,185,129,.3);
+  }
+  .btn-success:hover:not(:disabled) { background: #059669; }
+
+  .btn-cyan {
+    background: var(--cyan); color: #fff;
+    box-shadow: 0 2px 8px rgba(6,182,212,.3);
+  }
+  .btn-cyan:hover:not(:disabled) { background: #0891b2; }
+
+  .btn-ghost {
+    background: var(--bg-muted); color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover:not(:disabled) { background: var(--border); color: var(--text-primary); }
+  .btn-danger  { background: var(--error-light); color: #b91c1c; border: 1px solid #fecaca; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-sm { padding: 5px 11px; font-size: .78rem; }
+
+  /* ── Selected device display ── */
+  .device-selected-strip {
+    display: none;
+    align-items: center; gap: 10px;
+    background: var(--accent-light);
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: .84rem;
+  }
+  .device-selected-strip.visible { display: flex; }
+  .device-selected-strip strong { color: #1d4ed8; }
+
+  /* ── Pagination ── */
+  .pagination-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: .79rem; color: var(--text-secondary);
+  }
+  .pagination-row .pg-btns { display: flex; gap: 6px; }
+  .pg-btn {
+    width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--bg-surface); color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: .75rem; transition: all .15s;
+  }
+  .pg-btn:hover:not(:disabled) { background: var(--accent-light); border-color: #bfdbfe; color: var(--accent); }
+  .pg-btn:disabled { opacity: .35; cursor: default; }
+
+  /* ── Preview Panel ── */
+  .preview-row {
+    display: flex; gap: .85rem;
+  }
+  .preview-stat {
+    flex: 1;
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: .75rem 1rem;
+    text-align: center;
+  }
+  .preview-stat .p-num  { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
+  .preview-stat .p-label{ font-size: .72rem; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ── Progress Bar ── */
+  .progress-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    display: none;
+  }
+  .progress-section.visible { display: block; animation: slideUp .4s ease-out forwards; }
+
+  .progress-bar-outer {
+    background: var(--bg-muted);
+    border-radius: 99px;
+    height: 12px;
+    overflow: hidden;
+    margin: .75rem 0;
+    border: 1px solid var(--border);
+  }
+  .progress-bar-inner {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--cyan), var(--accent));
+    transition: width .6s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-bar-inner::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg,
+      transparent 0%, rgba(255,255,255,.3) 50%, transparent 100%);
+    background-size: 200px 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  .progress-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: .82rem;
+  }
+  .phase-text { color: var(--text-secondary); font-style: italic; }
+  .pct-text   { font-weight: 700; color: var(--accent); font-size: 1rem; }
+
+  /* ── Sync Log Terminal ── */
+  .log-terminal {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: .77rem;
+    line-height: 1.7;
+    max-height: 260px;
+    overflow-y: auto;
+    color: #94a3b8;
+    border: 1px solid #1e293b;
+  }
+  .log-terminal::-webkit-scrollbar { width: 5px; }
+  .log-terminal::-webkit-scrollbar-track { background: transparent; }
+  .log-terminal::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+  .log-line { display: flex; gap: 10px; animation: slideUp .2s ease-out forwards; }
+  .log-ts   { color: #475569; flex-shrink: 0; }
+  .log-msg  { flex: 1; }
+  .log-info    { color: #94a3b8; }
+  .log-success { color: #4ade80; }
+  .log-warn    { color: #fbbf24; }
+  .log-error   { color: #f87171; }
+
+  /* ── Summary Cards (post-sync) ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .75rem;
+    margin-top: .75rem;
+  }
+  .summary-card {
+    background: var(--bg-muted); border: 1px solid var(--border);
+    border-radius: 10px; padding: .9rem 1rem;
+  }
+  .summary-card .s-title { font-size: .75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .6px; margin-bottom: .5rem; }
+  .summary-card .s-row   { display: flex; justify-content: space-between; font-size: .82rem; padding: 2px 0; }
+  .summary-card .s-val   { font-weight: 700; }
+  .s-green { color: var(--success); }
+  .s-blue  { color: var(--accent); }
+  .s-red   { color: var(--error); }
+
+  /* ── Tabs (device preview) ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: .85rem; }
+  .tab-btn {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg-muted); font-size: .8rem; font-weight: 600;
+    color: var(--text-secondary); cursor: pointer; transition: all .2s;
+  }
+  .tab-btn.active { background: var(--accent-light); border-color: #bfdbfe; color: #1d4ed8; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── History Table ── */
+  .history-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Empty State ── */
+  .empty-state {
+    text-align: center; padding: 2.5rem 1rem;
+    color: var(--text-muted); font-size: .85rem;
+  }
+  .empty-state i { font-size: 2rem; margin-bottom: .5rem; display: block; opacity: .4; }
+
+  /* ── Alert Bar ── */
+  .alert-bar {
+    display: none; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 10px;
+    font-size: .84rem; font-weight: 500;
+    border: 1px solid;
+  }
+  .alert-bar.visible { display: flex; animation: slideUp .3s ease-out forwards; }
+  .alert-success { background: var(--success-light); border-color: #bbf7d0; color: #15803d; }
+  .alert-error   { background: var(--error-light);   border-color: #fecaca; color: #b91c1c; }
+
+  /* ── Spinner ── */
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .75s linear infinite; }
+  .spinner-dark { border-color: rgba(0,0,0,.1); border-top-color: var(--accent); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+    z-index: 9999; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--bg-surface); border-radius: var(--radius);
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    padding: 2rem; width: 460px; max-width: 95vw;
+    animation: popIn .35s cubic-bezier(.16,1,.3,1) forwards;
+  }
+  .modal-title { font-size: 1.1rem; font-weight: 700; margin: 0 0 .3rem; }
+  .modal-sub   { font-size: .85rem; color: var(--text-secondary); margin: 0 0 1.25rem; }
+  .modal-footer{ display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.25rem; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .main-grid   { grid-template-columns: 1fr; }
+    .stats-row   { grid-template-columns: repeat(2, 1fr); }
+    .summary-grid{ grid-template-columns: 1fr; }
+    .step-chips  { display: none; }
+  }
+  @media (max-width: 560px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .sync-wrapper { padding: .75rem .75rem 2rem; }
+  }
+
+  /* ── Skeleton loader ── */
+  .skeleton-row td {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 400px 100%;
+    animation: shimmer 1.5s linear infinite;
+    border-radius: 4px; height: 14px; border-bottom: 6px solid #fff;
+  }
+</style>
+
+<div class="sync-wrapper">
+<div class="sync-content">
+
+  <!-- ── Page Header ───────────────────────────────────────────────── -->
+  <div class="page-header-bar">
+    <div class="header-icon-wrap">
+      <i class="fas fa-satellite-dish"></i>
+    </div>
+    <div style="flex:1">
+      <h1 class="page-title">Sync to New Device</h1>
+      <p class="page-sub">Backup employee data, fingerprints &amp; attendance — then push to a new terminal.</p>
+    </div>
+    <div class="hdr-divider"></div>
+    <div class="step-chips" id="stepChips">
+      <div class="step-chip active" id="chip1"><span class="chip-num">1</span> Select Source</div>
+      <span class="step-arrow"><i class="fas fa-chevron-right"></i></span>
+      <div class="step-chip"  id="chip2"><span class="chip-num">2</span> Review Data</div>
+      <span class="step-arrow"><i class="fas fa-chevron-right"></i></span>
+      <div class="step-chip"  id="chip3"><span class="chip-num">3</span> Select Target</div>
+      <span class="step-arrow"><i class="fas fa-chevron-right"></i></span>
+      <div class="step-chip"  id="chip4"><span class="chip-num">4</span> Sync</div>
+    </div>
+  </div>
+
+  <!-- ── Stat Cards ─────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue"><i class="fas fa-server"></i></div>
+      <div>
+        <div class="stat-val" id="statDevices">—</div>
+        <div class="stat-label">Registered Devices</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-wifi"></i></div>
+      <div>
+        <div class="stat-val" id="statOnline">—</div>
+        <div class="stat-label">Online Now</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon cyan"><i class="fas fa-users"></i></div>
+      <div>
+        <div class="stat-val" id="statUsers">—</div>
+        <div class="stat-label">Source Users</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple"><i class="fas fa-clock"></i></div>
+      <div>
+        <div class="stat-val" id="statAttendance">—</div>
+        <div class="stat-label">Attendance Logs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Alert Bar ──────────────────────────────────────────────────── -->
+  <div class="alert-bar" id="alertBar">
+    <i id="alertIcon" class="fas fa-check-circle"></i>
+    <span id="alertMsg"></span>
+  </div>
+
+  <!-- ── Main Grid: Source | Target ─────────────────────────────────── -->
+  <div class="main-grid">
+
+    <!-- LEFT: Source Device -->
+    <div class="panel-card" style="animation-delay:.05s" class="anim-pop">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <div class="panel-icon pi-blue"><i class="fas fa-hdd"></i></div>
+          <h2 class="panel-title">Source Device</h2>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadDevices()">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="srcSearch" placeholder="Search by name or IP…" oninput="filterSourceTable()">
+      </div>
+
+      <!-- Selected strip -->
+      <div class="device-selected-strip" id="srcStrip">
+        <i class="fas fa-check-circle" style="color:var(--accent)"></i>
+        <span>Source: <strong id="srcName">—</strong> <code id="srcIpDisplay" style="font-size:.78rem;color:var(--text-secondary)"></code></span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="clearSource()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Device Table -->
+      <div class="table-wrap">
+        <table id="srcTable">
+          <thead>
+            <tr>
+              <th>Terminal</th>
+              <th>IP Address</th>
+              <th>Status</th>
+              <th>Last Sync</th>
+            </tr>
+          </thead>
+          <tbody id="srcBody">
+            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
+            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
+            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-row">
+        <span id="srcPageInfo" style="font-size:.77rem">—</span>
+        <div class="pg-btns">
+          <button class="pg-btn" id="srcPrev" onclick="changeSrcPage(-1)" disabled>‹</button>
+          <button class="pg-btn" id="srcNext" onclick="changeSrcPage(1)"  disabled>›</button>
+        </div>
+      </div>
+    </div><!-- /left -->
+
+    <!-- RIGHT: Target Device -->
+    <div class="panel-card" style="animation-delay:.1s">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <div class="panel-icon pi-cyan"><i class="fas fa-desktop"></i></div>
+          <h2 class="panel-title">Target Device</h2>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span id="targetCountPill" class="badge badge-synced" style="display:none">
+            <span class="dot dot-blue"></span> <span id="targetCountVal">0</span> selected
+          </span>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="tgtSearch" placeholder="Search by name or IP…" oninput="filterTargetTable()">
+      </div>
+
+      <!-- Selected strip -->
+      <div class="device-selected-strip" id="tgtStrip">
+        <i class="fas fa-check-circle" style="color:var(--cyan)"></i>
+        <span>Target: <strong id="tgtName">—</strong> <code id="tgtIpDisplay" style="font-size:.78rem;color:var(--text-secondary)"></code></span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="clearTarget()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Device Table -->
+      <div class="table-wrap">
+        <table id="tgtTable">
+          <thead>
+            <tr>
+              <th>Terminal</th>
+              <th>IP Address</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tgtBody">
+            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
+            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
+            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-row">
+        <span id="tgtPageInfo" style="font-size:.77rem">—</span>
+        <div class="pg-btns">
+          <button class="pg-btn" id="tgtPrev" onclick="changeTgtPage(-1)" disabled>‹</button>
+          <button class="pg-btn" id="tgtNext" onclick="changeTgtPage(1)"  disabled>›</button>
+        </div>
+      </div>
+    </div><!-- /right -->
+
+  </div><!-- /main-grid -->
+
+  <!-- ── Preview Panel ──────────────────────────────────────────────── -->
+  <div class="panel-card" id="previewPanel" style="display:none">
+    <div class="panel-header">
+      <div class="panel-title-group">
+        <div class="panel-icon pi-green"><i class="fas fa-eye"></i></div>
+        <h2 class="panel-title">Source Device Preview</h2>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <span id="previewDeviceName" class="badge badge-synced"></span>
+      </div>
+    </div>
+
+    <div class="preview-row" id="previewStats">
+      <div class="preview-stat">
+        <div class="p-num" id="prevUserCount">—</div>
+        <div class="p-label">Enrolled Users</div>
+      </div>
+      <div class="preview-stat">
+        <div class="p-num" id="prevFingerCount">—</div>
+        <div class="p-label">Fingerprint Slots</div>
+      </div>
+      <div class="preview-stat">
+        <div class="p-num" id="prevAttCount">—</div>
+        <div class="p-label">Attendance Logs</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('users', this)">
+        <i class="fas fa-users"></i> Users
+      </button>
+      <button class="tab-btn" onclick="switchTab('attendance', this)">
+        <i class="fas fa-clock"></i> Attendance
+      </button>
+    </div>
+
+    <!-- Users Tab -->
+    <div class="tab-panel active" id="tabUsers">
+      <div class="search-box" style="margin-bottom:.75rem">
+        <i class="fas fa-search"></i>
+        <input type="text" id="userSearch" placeholder="Filter users…" oninput="filterUserTable()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Employee Code</th>
+              <th>Name</th>
+              <th>Access #</th>
+              <th>PIN</th>
+              <th>Privilege</th>
+            </tr>
+          </thead>
+          <tbody id="previewUserBody">
+            <tr><td colspan="5"><div class="empty-state"><i class="fas fa-arrow-up"></i>Select a source device above</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-row" id="userPagRow" style="display:none">
+        <span id="userPageInfo"></span>
+        <div class="pg-btns">
+          <button class="pg-btn" id="userPrev" onclick="changeUserPage(-1)" disabled>‹</button>
+          <button class="pg-btn" id="userNext" onclick="changeUserPage(1)"  disabled>›</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Tab -->
+    <div class="tab-panel" id="tabAttendance">
+      <div class="empty-state" id="attEmpty"><i class="fas fa-clock"></i>Attendance count will appear after source is selected.</div>
+    </div>
+
+  </div><!-- /previewPanel -->
+
+  <!-- ── Sync Action Bar ────────────────────────────────────────────── -->
+  <div class="panel-card" id="syncActionBar" style="flex-direction:row;align-items:center;justify-content:space-between;gap:1rem">
+    <div>
+      <div style="font-size:.97rem;font-weight:700;">Ready to Sync</div>
+      <div style="font-size:.81rem;color:var(--text-secondary);margin-top:2px" id="syncSummaryLine">
+        Select a source and target device to begin.
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center">
+      <button class="btn btn-ghost" onclick="resetAll()"><i class="fas fa-undo"></i> Reset</button>
+      <button class="btn btn-cyan" id="startSyncBtn" disabled onclick="openConfirmModal()">
+        <i class="fas fa-bolt"></i> Start Sync
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Progress Section ───────────────────────────────────────────── -->
+  <div class="progress-section" id="progressSection">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+      <div style="font-weight:700;font-size:.95rem;display:flex;gap:8px;align-items:center">
+        <div class="spinner" id="syncSpinner"></div>
+        <span id="syncStatusTitle">Syncing…</span>
+      </div>
+      <span class="badge" id="statusBadge" style="display:none"></span>
+    </div>
+
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <div class="progress-meta">
+      <span class="phase-text" id="phaseText">Initialising…</span>
+      <span class="pct-text" id="pctText">0%</span>
+    </div>
+
+    <!-- Summary (shown on completion) -->
+    <div id="syncSummaryGrid" style="display:none">
+      <hr style="border-color:var(--border);margin:1rem 0">
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="s-title">👥 Users</div>
+          <div class="s-row"><span>Pushed</span>   <span class="s-val s-green" id="s_up">0</span></div>
+          <div class="s-row"><span>Skipped</span>  <span class="s-val s-blue"  id="s_us">0</span></div>
+        </div>
+        <div class="summary-card">
+          <div class="s-title">🖐 Fingerprints</div>
+          <div class="s-row"><span>Pushed</span>   <span class="s-val s-green" id="s_fp">0</span></div>
+          <div class="s-row"><span>Skipped</span>  <span class="s-val s-blue"  id="s_fs">0</span></div>
+        </div>
+        <div class="summary-card">
+          <div class="s-title">⚠️ Errors</div>
+          <div class="s-row"><span>Total errors</span> <span class="s-val s-red" id="s_er">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Terminal -->
+    <div style="margin-top:1rem">
+      <div style="font-size:.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:.4rem;display:flex;justify-content:space-between">
+        <span><i class="fas fa-terminal" style="margin-right:5px"></i>Sync Log</span>
+        <button class="btn btn-ghost btn-sm" onclick="clearLog()" style="padding:2px 8px;font-size:.72rem">Clear</button>
+      </div>
+      <div class="log-terminal" id="logTerminal">
+        <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-msg log-info">Waiting for sync to start…</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sync History ────────────────────────────────────────────────── -->
+  <div class="history-section">
+    <div class="panel-header" style="margin-bottom:.75rem">
+      <div class="panel-title-group">
+        <div class="panel-icon pi-purple"><i class="fas fa-history"></i></div>
+        <h2 class="panel-title">Sync History</h2>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadHistory()">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Task ID</th>
+            <th>Source</th>
+            <th>Target</th>
+            <th>Operator</th>
+            <th>Users</th>
+            <th>Fingerprints</th>
+            <th>Errors</th>
+            <th>Status</th>
+            <th>Started</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr><td colspan="9"><div class="empty-state"><i class="fas fa-history"></i>No sync history yet.</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /sync-content -->
+</div><!-- /sync-wrapper -->
+
+<!-- ── Confirm Modal ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <h3 class="modal-title"><i class="fas fa-bolt" style="color:var(--cyan);margin-right:6px"></i>Confirm Sync</h3>
+    <p class="modal-sub">This will backup all data from the source device and push it to the target. This cannot be undone.</p>
+
+    <div style="background:var(--bg-muted);border:1px solid var(--border);border-radius:10px;padding:1rem;font-size:.85rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem">
+        <span style="color:var(--text-secondary)">Source Device</span>
+        <strong id="modalSrc">—</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--text-secondary)">Target Device</span>
+        <strong id="modalTgt">—</strong>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('confirmModal')">Cancel</button>
+      <button class="btn btn-cyan" id="confirmSyncBtn" onclick="startSync()">
+        <i class="fas fa-bolt"></i> Confirm &amp; Sync
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   SYNC TO NEW DEVICE — Frontend Logic
+═══════════════════════════════════════════════════════════════════════════ */
+
+const PAGE_SIZE = 8;
+
+let allDevices     = [];
+let srcPage = 1, tgtPage = 1;
+let srcFiltered = [], tgtFiltered = [];
+
+let selectedSourceIp   = null, selectedSourceName   = null;
+let selectedTargetIp   = null, selectedTargetName   = null;
+
+let allPreviewUsers  = [], filteredPreviewUsers = [], userPage = 1;
+
+let activePollInterval = null;
+let activeTaskId       = null;
+
+// ── Bootstrap ───────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  loadDevices();
+  loadHistory();
+  setStep(1);
+});
+
+// ── Load Devices ─────────────────────────────────────────────────────────────
+async function loadDevices() {
+  setSkeleton("srcBody", 4);
+  setSkeleton("tgtBody", 4);
+  try {
+    const res  = await fetch("/sync/api/devices");
+    const data = await res.json();
+    if (data.status !== "success") throw new Error(data.message);
+    allDevices  = data.devices;
+    srcFiltered = [...allDevices];
+    tgtFiltered = [...allDevices];
+    renderSourceTable();
+    renderTargetTable();
+
+    // Stats
+    document.getElementById("statDevices").textContent = allDevices.length;
+    document.getElementById("statOnline").textContent  = allDevices.filter(d => d.online).length;
+  } catch (e) {
+    showAlert("Failed to load devices: " + e.message, false);
+    setSkeleton("srcBody", 0, "Could not load device list.");
+    setSkeleton("tgtBody", 0, "Could not load device list.");
+  }
+}
+
+// ── Render Tables ─────────────────────────────────────────────────────────────
+function renderSourceTable() {
+  const body = document.getElementById("srcBody");
+  body.innerHTML = "";
+  const total = srcFiltered.length;
+  const pages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (srcPage > pages) srcPage = pages;
+
+  const slice = srcFiltered.slice((srcPage - 1) * PAGE_SIZE, srcPage * PAGE_SIZE);
+  if (!slice.length) {
+    body.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-server"></i>No devices found.</div></td></tr>`;
+  } else {
+    slice.forEach(d => {
+      const tr  = document.createElement("tr");
+      const isSelected = d.ip === selectedSourceIp;
+      if (isSelected) tr.classList.add("selected-row");
+      tr.innerHTML = `
+        <td><strong>${d.bcc}</strong></td>
+        <td><code style="font-size:.79rem;color:var(--text-secondary)">${d.ip}</code></td>
+        <td>${statusBadge(d.online)}</td>
+        <td><span style="font-size:.77rem;color:var(--text-muted)">—</span></td>
+      `;
+      tr.addEventListener("click", () => selectSource(d.ip, d.bcc, tr));
+      body.appendChild(tr);
+    });
+  }
+
+  document.getElementById("srcPageInfo").textContent = `Page ${srcPage} of ${pages}  (${total} devices)`;
+  document.getElementById("srcPrev").disabled = srcPage <= 1;
+  document.getElementById("srcNext").disabled = srcPage >= pages;
+}
+
+function renderTargetTable() {
+  const body = document.getElementById("tgtBody");
+  body.innerHTML = "";
+  const total = tgtFiltered.length;
+  const pages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (tgtPage > pages) tgtPage = pages;
+
+  const slice = tgtFiltered.slice((tgtPage - 1) * PAGE_SIZE, tgtPage * PAGE_SIZE);
+  if (!slice.length) {
+    body.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-desktop"></i>No devices found.</div></td></tr>`;
+  } else {
+    slice.forEach(d => {
+      const tr  = document.createElement("tr");
+      const isSelected = d.ip === selectedTargetIp;
+      const isSource   = d.ip === selectedSourceIp;
+      if (isSelected) tr.classList.add("selected-row");
+
+      tr.innerHTML = `
+        <td><strong>${d.bcc}</strong></td>
+        <td><code style="font-size:.79rem;color:var(--text-secondary)">${d.ip}</code></td>
+        <td>${statusBadge(d.online)}</td>
+        <td>
+          ${isSource
+            ? `<span class="badge badge-warn"><i class="fas fa-ban"></i> Is Source</span>`
+            : `<button class="btn btn-sm ${isSelected ? 'btn-success' : 'btn-ghost'}"
+                onclick="selectTarget('${d.ip}','${d.bcc}',this)" style="padding:4px 10px">
+                ${isSelected ? '<i class="fas fa-check"></i> Selected' : 'Select'}
+              </button>`
+          }
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  document.getElementById("tgtPageInfo").textContent = `Page ${tgtPage} of ${pages}  (${total} devices)`;
+  document.getElementById("tgtPrev").disabled = tgtPage <= 1;
+  document.getElementById("tgtNext").disabled = tgtPage >= pages;
+}
+
+function statusBadge(online) {
+  return online
+    ? `<span class="badge badge-online"><span class="dot dot-green dot-pulse"></span>Online</span>`
+    : `<span class="badge badge-offline"><span class="dot dot-red"></span>Offline</span>`;
+}
+
+// ── Source Selection ──────────────────────────────────────────────────────────
+async function selectSource(ip, name, tr) {
+  if (selectedSourceIp === ip) return;
+  selectedSourceIp   = ip;
+  selectedSourceName = name;
+
+  document.getElementById("srcName").textContent      = name;
+  document.getElementById("srcIpDisplay").textContent = ip;
+  document.getElementById("srcStrip").classList.add("visible");
+
+  // Preview panel
+  document.getElementById("previewPanel").style.display = "flex";
+  document.getElementById("previewDeviceName").textContent = name;
+  document.getElementById("prevUserCount").textContent  = "…";
+  document.getElementById("prevFingerCount").textContent = "…";
+  document.getElementById("prevAttCount").textContent   = "…";
+  document.getElementById("previewUserBody").innerHTML =
+    `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Loading backup data…</div></td></tr>`;
+
+  renderSourceTable();
+  renderTargetTable();     // disable "Is Source" row in target
+  updateSyncBar();
+  setStep(2);
+
+  // Fetch backup summary (users + fingerprints + attendance counts + last backup)
+  try {
+    const sr   = await fetch(`/sync/api/device/${ip}/backup-summary`);
+    const sdat = await sr.json();
+    if (sdat.status === "success") {
+      document.getElementById("prevUserCount").textContent   = sdat.user_count.toLocaleString();
+      document.getElementById("prevFingerCount").textContent = sdat.fp_count.toLocaleString();
+      document.getElementById("prevAttCount").textContent    = sdat.att_count.toLocaleString();
+      document.getElementById("statUsers").textContent       = sdat.user_count.toLocaleString();
+      document.getElementById("statAttendance").textContent  = sdat.att_count.toLocaleString();
+    }
+  } catch (_) {}
+
+  // Fetch user list for preview table
+  try {
+    const res  = await fetch(`/sync/api/device/${ip}/users`);
+    const data = await res.json();
+    if (data.status !== "success") throw new Error(data.message);
+
+    allPreviewUsers      = data.users;
+    filteredPreviewUsers = [...allPreviewUsers];
+    userPage = 1;
+    renderUserPreviewTable();
+    document.getElementById("userPagRow").style.display = "flex";
+  } catch (e) {
+    document.getElementById("previewUserBody").innerHTML =
+      `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Could not load users: ${e.message}</div></td></tr>`;
+  }
+}
+
+function clearSource() {
+  selectedSourceIp = null; selectedSourceName = null;
+  document.getElementById("srcStrip").classList.remove("visible");
+  document.getElementById("previewPanel").style.display = "none";
+  document.getElementById("statUsers").textContent = "—";
+  document.getElementById("statAttendance").textContent = "—";
+  renderSourceTable();
+  renderTargetTable();
+  updateSyncBar();
+  setStep(1);
+}
+
+// ── Target Selection ──────────────────────────────────────────────────────────
+function selectTarget(ip, name, btn) {
+  if (ip === selectedSourceIp) { showAlert("Source and target must be different.", false); return; }
+  selectedTargetIp   = ip;
+  selectedTargetName = name;
+
+  document.getElementById("tgtName").textContent      = name;
+  document.getElementById("tgtIpDisplay").textContent = ip;
+  document.getElementById("tgtStrip").classList.add("visible");
+  document.getElementById("targetCountPill").style.display = "inline-flex";
+  document.getElementById("targetCountVal").textContent = "1";
+
+  renderTargetTable();
+  updateSyncBar();
+  setStep(3);
+}
+
+function clearTarget() {
+  selectedTargetIp = null; selectedTargetName = null;
+  document.getElementById("tgtStrip").classList.remove("visible");
+  document.getElementById("targetCountPill").style.display = "none";
+  renderTargetTable();
+  updateSyncBar();
+  if (selectedSourceIp) setStep(2); else setStep(1);
+}
+
+// ── Sync Bar ─────────────────────────────────────────────────────────────────
+function updateSyncBar() {
+  const btn  = document.getElementById("startSyncBtn");
+  const line = document.getElementById("syncSummaryLine");
+
+  if (selectedSourceIp && selectedTargetIp) {
+    btn.disabled = false;
+    line.textContent = `${selectedSourceName} (${selectedSourceIp})  →  ${selectedTargetName} (${selectedTargetIp})`;
+    setStep(3);
+  } else if (selectedSourceIp) {
+    btn.disabled = true;
+    line.textContent = `Source: ${selectedSourceName}. Now select a target device.`;
+  } else {
+    btn.disabled = true;
+    line.textContent = "Select a source and target device to begin.";
+  }
+}
+
+// ── Step Chips ────────────────────────────────────────────────────────────────
+function setStep(n) {
+  [1, 2, 3, 4].forEach(i => {
+    const chip = document.getElementById("chip" + i);
+    if (!chip) return;
+    chip.classList.remove("active", "done");
+    if (i < n)  chip.classList.add("done");
+    if (i === n) chip.classList.add("active");
+  });
+}
+
+// ── User Preview Table ────────────────────────────────────────────────────────
+function renderUserPreviewTable() {
+  const body = document.getElementById("previewUserBody");
+  body.innerHTML = "";
+  const total = filteredPreviewUsers.length;
+  const pages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (userPage > pages) userPage = pages;
+
+  const slice = filteredPreviewUsers.slice((userPage - 1) * PAGE_SIZE, userPage * PAGE_SIZE);
+  if (!slice.length) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty-state">No users match.</div></td></tr>`;
+  } else {
+    slice.forEach(u => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><code style="font-size:.79rem">${u.employee_code}</code></td>
+        <td><strong>${u.employee_name || "—"}</strong></td>
+        <td>${u.access_number}</td>
+        <td>${u.has_pin ? '<span class="badge badge-synced" style="font-size:.7rem">PIN set</span>' : '<span style="color:var(--text-muted);font-size:.78rem">—</span>'}</td>
+        <td>${privilegeLabel(u.privilege_level)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+  document.getElementById("userPageInfo").textContent = `Page ${userPage} / ${pages}  (${total})`;
+  document.getElementById("userPrev").disabled = userPage <= 1;
+  document.getElementById("userNext").disabled = userPage >= pages;
+}
+
+function privilegeLabel(lvl) {
+  if (lvl >= 14) return `<span class="badge badge-warn">Admin</span>`;
+  return `<span style="color:var(--text-muted);font-size:.78rem">User</span>`;
+}
+
+function filterUserTable() {
+  const t = document.getElementById("userSearch").value.toLowerCase();
+  filteredPreviewUsers = allPreviewUsers.filter(u =>
+    (u.employee_code + u.employee_name).toLowerCase().includes(t)
+  );
+  userPage = 1;
+  renderUserPreviewTable();
+}
+
+function changeUserPage(d) { userPage += d; renderUserPreviewTable(); }
+
+// ── Tab Switcher ──────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("tab" + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add("active");
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function filterSourceTable() {
+  const t = document.getElementById("srcSearch").value.toLowerCase();
+  srcFiltered = allDevices.filter(d => (d.bcc + d.ip).toLowerCase().includes(t));
+  srcPage = 1; renderSourceTable();
+}
+
+function filterTargetTable() {
+  const t = document.getElementById("tgtSearch").value.toLowerCase();
+  tgtFiltered = allDevices.filter(d => (d.bcc + d.ip).toLowerCase().includes(t));
+  tgtPage = 1; renderTargetTable();
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+function changeSrcPage(d) { srcPage += d; renderSourceTable(); }
+function changeTgtPage(d) { tgtPage += d; renderTargetTable(); }
+
+// ── Confirm Modal ─────────────────────────────────────────────────────────────
+function openConfirmModal() {
+  if (!selectedSourceIp || !selectedTargetIp) return;
+  document.getElementById("modalSrc").textContent = `${selectedSourceName} (${selectedSourceIp})`;
+  document.getElementById("modalTgt").textContent = `${selectedTargetName} (${selectedTargetIp})`;
+  document.getElementById("confirmModal").classList.add("open");
+}
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+// ── Start Sync ────────────────────────────────────────────────────────────────
+async function startSync() {
+  closeModal("confirmModal");
+  if (!selectedSourceIp || !selectedTargetIp) return;
+
+  const btn = document.getElementById("startSyncBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner"></div> Launching…`;
+
+  // Show progress section
+  const prog = document.getElementById("progressSection");
+  prog.classList.add("visible");
+  document.getElementById("syncSummaryGrid").style.display = "none";
+  document.getElementById("syncStatusTitle").textContent = "Syncing…";
+  document.getElementById("statusBadge").style.display = "none";
+  document.getElementById("progressBar").style.width = "0%";
+  document.getElementById("pctText").textContent = "0%";
+  document.getElementById("phaseText").textContent = "Initialising…";
+  document.getElementById("logTerminal").innerHTML = "";
+  appendLog("--:--:--", "Sync initiated…", "info");
+  setStep(4);
+
+  try {
+    const res  = await fetch("/sync/api/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source_ip: selectedSourceIp, target_ip: selectedTargetIp }),
+    });
+    const data = await res.json();
+    if (data.status !== "success") throw new Error(data.message);
+
+    activeTaskId = data.task_id;
+    startPolling(activeTaskId);
+  } catch (e) {
+    showAlert("Failed to start sync: " + e.message, false);
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fas fa-bolt"></i> Start Sync`;
+  }
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+function startPolling(taskId) {
+  if (activePollInterval) clearInterval(activePollInterval);
+  activePollInterval = setInterval(() => pollStatus(taskId), 1500);
+}
+
+let lastLogCount = 0;
+
+async function pollStatus(taskId) {
+  try {
+    const res  = await fetch(`/sync/api/status/${taskId}`);
+    const data = await res.json();
+    if (data.status === "error") throw new Error(data.message);
+
+    // Update progress bar
+    const pct = data.progress || 0;
+    document.getElementById("progressBar").style.width  = pct + "%";
+    document.getElementById("pctText").textContent      = pct + "%";
+    document.getElementById("phaseText").textContent    = data.phase || "…";
+
+    // Append new log lines
+    const logs = data.logs || [];
+    if (logs.length > lastLogCount) {
+      logs.slice(lastLogCount).forEach(l => appendLog(l.ts, l.msg, l.level));
+      lastLogCount = logs.length;
+    }
+
+    // Terminal states
+    if (data.status === "done" || data.status === "failed") {
+      clearInterval(activePollInterval);
+      activePollInterval = null;
+
+      const success = data.status === "done";
+      const badge = document.getElementById("statusBadge");
+      badge.style.display = "inline-flex";
+      badge.className = "badge " + (success ? "badge-online" : "badge-offline");
+      badge.innerHTML = success
+        ? `<span class="dot dot-green"></span> Complete`
+        : `<span class="dot dot-red"></span> Failed`;
+
+      document.getElementById("syncSpinner").style.display = "none";
+      document.getElementById("syncStatusTitle").textContent = success ? "Sync Complete" : "Sync Failed";
+
+      // Summary
+      const s = data.summary || {};
+      document.getElementById("s_up").textContent = s.users_pushed         || 0;
+      document.getElementById("s_us").textContent = s.users_skipped        || 0;
+      document.getElementById("s_fp").textContent = s.fingerprints_pushed  || 0;
+      document.getElementById("s_fs").textContent = s.fingerprints_skipped || 0;
+      document.getElementById("s_er").textContent = s.errors               || 0;
+      document.getElementById("syncSummaryGrid").style.display = "block";
+
+      showAlert(
+        success
+          ? `Sync completed. ${s.users_pushed} users and ${s.fingerprints_pushed} fingerprints pushed to ${selectedTargetName}.`
+          : `Sync failed. Check the log for details.`,
+        success
+      );
+
+      // Re-enable buttons
+      const btn = document.getElementById("startSyncBtn");
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fas fa-bolt"></i> Start Sync`;
+
+      loadHistory();
+    }
+  } catch (e) {
+    clearInterval(activePollInterval);
+    appendLog(ts(), "Poll error: " + e.message, "error");
+  }
+}
+
+// ── Log Terminal ──────────────────────────────────────────────────────────────
+function appendLog(timestamp, msg, level) {
+  const term = document.getElementById("logTerminal");
+  const line = document.createElement("div");
+  line.className = "log-line";
+  line.innerHTML = `<span class="log-ts">${timestamp}</span><span class="log-msg log-${level}">${msg}</span>`;
+  term.appendChild(line);
+  term.scrollTop = term.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById("logTerminal").innerHTML = "";
+  lastLogCount = 0;
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  try {
+    const res  = await fetch("/sync/api/logs");
+    const data = await res.json();
+    if (data.status !== "success") return;
+
+    const body = document.getElementById("historyBody");
+    if (!data.tasks.length) {
+      body.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fas fa-history"></i>No sync history yet.</div></td></tr>`;
+      return;
+    }
+    body.innerHTML = "";
+    data.tasks.forEach(t => {
+      const s = t.summary || {};
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><code style="font-size:.72rem;color:var(--text-muted)">${t.task_id.slice(0,8)}…</code></td>
+        <td><code style="font-size:.78rem">${t.source_ip}</code></td>
+        <td><code style="font-size:.78rem">${t.target_ip}</code></td>
+        <td>${t.operator}</td>
+        <td>${s.users_pushed || 0}</td>
+        <td>${s.fingerprints_pushed || 0}</td>
+        <td>${s.errors || 0}</td>
+        <td>${histStatusBadge(t.status, t.progress)}</td>
+        <td style="font-size:.77rem;color:var(--text-secondary)">${formatTs(t.started_at)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  } catch (_) {}
+}
+
+function histStatusBadge(status, pct) {
+  if (status === "done")    return `<span class="badge badge-online"><span class="dot dot-green"></span>Done</span>`;
+  if (status === "failed")  return `<span class="badge badge-offline"><span class="dot dot-red"></span>Failed</span>`;
+  if (status === "running") return `<span class="badge badge-synced"><span class="dot dot-blue dot-pulse"></span>Running (${pct}%)</span>`;
+  return `<span class="badge badge-warn">Pending</span>`;
+}
+
+function formatTs(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString() + " " + d.toLocaleTimeString();
+}
+
+// ── Alert Bar ─────────────────────────────────────────────────────────────────
+function showAlert(msg, success) {
+  const bar  = document.getElementById("alertBar");
+  const icon = document.getElementById("alertIcon");
+  document.getElementById("alertMsg").textContent = msg;
+  bar.className = "alert-bar visible " + (success ? "alert-success" : "alert-error");
+  icon.className = success ? "fas fa-check-circle" : "fas fa-exclamation-circle";
+  setTimeout(() => bar.classList.remove("visible"), 8000);
+}
+
+// ── Skeleton Rows ─────────────────────────────────────────────────────────────
+function setSkeleton(id, count, emptyMsg) {
+  const body = document.getElementById(id);
+  if (!body) return;
+  if (count === 0 && emptyMsg) {
+    body.innerHTML = `<tr><td colspan="4"><div class="empty-state">${emptyMsg}</div></td></tr>`;
+    return;
+  }
+  body.innerHTML = Array(count).fill("")
+    .map(() => `<tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>`)
+    .join("");
+}
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+function ts() {
+  const n = new Date();
+  return [n.getHours(), n.getMinutes(), n.getSeconds()]
+    .map(x => String(x).padStart(2, "0")).join(":");
+}
+
+function resetAll() {
+  clearSource();
+  clearTarget();
+  document.getElementById("progressSection").classList.remove("visible");
+  document.getElementById("alertBar").classList.remove("visible");
+  setStep(1);
+  lastLogCount = 0;
+  if (activePollInterval) { clearInterval(activePollInterval); activePollInterval = null; }
+  const btn = document.getElementById("startSyncBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-bolt"></i> Start Sync`;
+  document.getElementById("syncSpinner").style.display = "";
+}
+</script>
+{% endblock %}
