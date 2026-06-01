@@ -8,7 +8,7 @@
      (mirrors move_registration.html variables + adds sync-specific tokens)
   ═══════════════════════════════════════════════════════════════════════ */
   :root {
-    --bg-page:     #f0f2f5;
+    --bg-page:     #0a0a12;
     --bg-surface:  #ffffff;
     --bg-muted:    #f9fafb;
     --border:      #e5e7eb;
@@ -923,13 +923,42 @@ async function loadDevices() {
     renderSourceTable();
     renderTargetTable();
 
-    // Stats
+    // Stats — online count unknown yet, show total
     document.getElementById("statDevices").textContent = allDevices.length;
-    document.getElementById("statOnline").textContent  = allDevices.filter(d => d.online).length;
+    document.getElementById("statOnline").textContent  = "…";
+
+    // Fetch ping status concurrently in the background
+    fetchDeviceStatuses();
   } catch (e) {
     showAlert("Failed to load devices: " + e.message, false);
     setSkeleton("srcBody", 0, "Could not load device list.");
     setSkeleton("tgtBody", 0, "Could not load device list.");
+  }
+}
+
+// ── Background ping status ────────────────────────────────────────────────────
+async function fetchDeviceStatuses() {
+  try {
+    const res  = await fetch("/sync/api/devices/status");
+    const data = await res.json();
+    if (data.status !== "success") return;
+
+    const statuses = data.statuses;   // { "192.168.1.1": true, ... }
+
+    // Patch allDevices in-place
+    allDevices.forEach(d => {
+      if (d.ip in statuses) d.online = statuses[d.ip];
+    });
+
+    // Re-render so badges update
+    renderSourceTable();
+    renderTargetTable();
+
+    // Update online count stat
+    document.getElementById("statOnline").textContent =
+      allDevices.filter(d => d.online).length;
+  } catch (_) {
+    // Non-fatal — badges just stay as "Checking…"
   }
 }
 
@@ -1006,6 +1035,8 @@ function renderTargetTable() {
 }
 
 function statusBadge(online) {
+  if (online === null || online === undefined)
+    return `<span class="badge badge-warn" data-status-badge><span class="dot" style="background:var(--warning);animation:pulse 1s infinite"></span>Checking…</span>`;
   return online
     ? `<span class="badge badge-online"><span class="dot dot-green dot-pulse"></span>Online</span>`
     : `<span class="badge badge-offline"><span class="dot dot-red"></span>Offline</span>`;

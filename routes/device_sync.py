@@ -6,7 +6,7 @@ import pyodbc
 # Reusing your connection string format
 BIOCENTRAL_CONN = (
     "Driver={ODBC Driver 18 for SQL Server};"
-    "Server=MGSVR14.mgroup.local,1433;"
+    "Server=MGSVR17.mgroup.local,1433;"
     "Database=biocentral;"
     "Trusted_Connection=yes;"
     "Network=dbmssocn;"

@@ -9,10 +9,10 @@ from zk import ZK, const
 get_employees_bp = Blueprint('get_employees', __name__)
 
 def get_db_connection():
-    """Verified Bio-Central connection string for MGSVR14."""
+    """Verified Bio-Central connection string for MGSVR17."""
     conn_str = (
         "Driver={ODBC Driver 18 for SQL Server};"
-        "Server=MGSVR14.mgroup.local,1433;"
+        "Server=MGSVR17.mgroup.local,1433;"
         "Database=biocentral;"
         "Trusted_Connection=yes;"
         "TrustServerCertificate=yes;"

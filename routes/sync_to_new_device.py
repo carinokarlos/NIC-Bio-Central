@@ -461,7 +461,10 @@ def sync_to_new_device():
 @sync_to_new_device_bp.route("/sync/api/devices", methods=["GET"])
 @loggedin_required()
 def api_get_devices():
-    """Return all registered ZK terminals from dbo.device_registry."""
+    """
+    Return all registered ZK terminals instantly — no ping, online=null.
+    Call GET /sync/api/devices/status separately to get live online status.
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
@@ -471,18 +474,52 @@ def api_get_devices():
         devices = []
         for row in cur.fetchall():
             ip = row.ip_address.strip() if row.ip_address else ""
-            online, _ = _ping(ip)
             devices.append({
                 "device_id":  row.device_id,
                 "bcc":        row.bcc,
                 "ip":         ip,
                 "comms_key":  row.comms_key,
                 "chain_type": row.chain_type,
-                "online":     online,
+                "online":     None,   # populated by /devices/status
             })
         cur.close()
         conn.close()
         return jsonify({"status": "success", "devices": devices})
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 500
+
+
+# ── GET /api/devices/status ───────────────────────────────────────────────────
+@sync_to_new_device_bp.route("/sync/api/devices/status", methods=["GET"])
+@loggedin_required()
+def api_devices_status():
+    """
+    Ping all devices concurrently and return { ip: online } map.
+    Called by the frontend after the table is already rendered so the page
+    never blocks waiting for timeouts.
+    """
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        cur.execute("SELECT ip_address FROM dbo.device_registry")
+        ips = [
+            row.ip_address.strip()
+            for row in cur.fetchall()
+            if row.ip_address and row.ip_address.strip()
+        ]
+        cur.close()
+        conn.close()
+
+        def _check(ip: str) -> tuple[str, bool]:
+            ok, _ = _ping(ip)
+            return ip, ok
+
+        statuses: dict[str, bool] = {}
+        with ThreadPoolExecutor(max_workers=min(len(ips), 20)) as pool:
+            for ip, online in pool.map(_check, ips):
+                statuses[ip] = online
+
+        return jsonify({"status": "success", "statuses": statuses})
     except Exception as exc:
         return jsonify({"status": "error", "message": str(exc)}), 500
 

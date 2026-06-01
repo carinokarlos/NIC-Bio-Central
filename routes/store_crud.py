@@ -36,7 +36,7 @@ def get_db_connection():
     """
     conn_str = (
         "Driver={ODBC Driver 18 for SQL Server};"
-        "Server=MGSVR14.mgroup.local,1433;"
+        "Server=MGSVR17.mgroup.local,1433;"
         "Database=biocentral;"
         "Trusted_Connection=yes;"
         "TrustServerCertificate=yes;"
