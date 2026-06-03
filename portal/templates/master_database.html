@@ -329,8 +329,7 @@
     }
 </style>
 
-<div class="manager-wrapper">
-  <div class="bento-layout">
+<div class="manager-wrapper" id="ui-wrapper" style="opacity: 0; transition: opacity 0.3s ease;">  <div class="bento-layout">
     
     <!-- Header Card -->
     <div class="header-card stagger-1 span-full">
@@ -659,6 +658,33 @@ $(document).ready(function() {
             table.column(4).search('', true, false).draw();
         }
     });
+
+    // ... this is your existing Location filter code ...
+        $('#location-filter').on('change', function() {
+            var selectedLocations = $(this).val();
+            if (selectedLocations && selectedLocations.length > 0) {
+                var escaped = selectedLocations.map(function(loc) {
+                    return loc.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+                });
+                var regexStr = '^(' + escaped.join('|') + ')$';
+                table.column(4).search(regexStr, true, false).draw();
+            } else {
+                table.column(4).search('', true, false).draw();
+            }
+        });
+
+        // 🟢 ADD THIS NEW CODE HERE: Reveal UI after libraries finish loading
+        setTimeout(function() {
+            // 1. Restart the entrance animations so they play AFTER styling
+            $('.stagger-1, .stagger-2, .pop-in-container').each(function() {
+                $(this).css('animation', 'none');
+                this.offsetHeight; // trigger browser reflow
+                $(this).css('animation', '');
+            });
+            
+            // 2. Fade in the completely styled page
+            $('#ui-wrapper').css('opacity', '1');
+        }, 50); // Tiny 50ms buffer ensures DataTables is fully painted
 });
 </script>
 {% endblock %}
