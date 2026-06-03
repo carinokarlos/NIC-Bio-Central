@@ -330,10 +330,32 @@ def export_master_logs():
                 ])
 
         output = si.getvalue()
+
+        # ------------------------------------------------------------------
+        # Dynamic Filename Generation (Option B: Date-Stamped)
+        # ------------------------------------------------------------------
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        
+        # If exactly 1 employee's data was processed
+        if len(employee_meta) == 1:
+            emp_code = list(employee_meta.keys())[0]
+            emp_name = employee_meta[emp_code][1]
+            
+            # Clean the name to make it safe for file saving
+            clean_name = emp_name.replace(' ', '_').replace('.', '_').replace(',', '')
+            while '__' in clean_name:
+                clean_name = clean_name.replace('__', '_')
+                
+            filename = f"{emp_code}_{clean_name}_{current_date}.csv"
+            
+        # If multiple employees were processed
+        else:
+            filename = f"Batch_Export_{current_date}.csv"
+
         return Response(
             output,
             mimetype="text/csv",
-            headers={"Content-Disposition": "attachment; filename=Biocentral_Export.csv"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
 
     except Exception as e:
