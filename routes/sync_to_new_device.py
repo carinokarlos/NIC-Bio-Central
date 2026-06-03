@@ -57,7 +57,7 @@ RETRY_DELAY = 2
 # ─────────────────────────────────────────────────────────────────────────────
 BIOCENTRAL_CONN_STR = (
     "Driver={ODBC Driver 18 for SQL Server};"
-    "Server=MGSVR14.mgroup.local,1433;"
+    "Server=MGSVR17.mgroup.local,1433;"
     "Database=biocentral;"
     "Trusted_Connection=yes;"
     "TrustServerCertificate=yes;"
@@ -174,12 +174,13 @@ def _bump(task_id: str, key: str, amount: int = 1) -> None:
 # ── SYNC ENGINE ──────────────────────────────────────────────────────────────
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str) -> None:
+def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str, only_codes: list | None = None) -> None:
     """
     Background thread.
     Reads dbo.backup_device_users and dbo.backup_fingerprints for source_ip
     and pushes the data to the target ZK device.
 
+    only_codes: if provided, only push users whose employee_code is in this list.
     Progress milestones: 5 → 10 → 20 → 30–60 → 60–90 → 95 → 100
     """
     db        = None
@@ -206,8 +207,7 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str) -> No
         # ── Fetch users from dbo.backup_device_users ──────────────────────────
         cur.execute(
             """
-            SELECT employee_code, access_number, employee_name,
-                   privilege_level, pin_password
+            SELECT employee_code, employee_name, privilege_level, pin_password
             FROM   dbo.backup_device_users
             WHERE  device_ip = ?
             ORDER  BY employee_code
@@ -221,7 +221,15 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str) -> No
                 f"No backed-up users found for device {source_ip}. "
                 "Run a backup first from the Device Manager."
             )
-        _log(task_id, f"Found {len(source_users)} user(s) in backup for {source_ip}.")
+
+        # Filter to specific codes if this is a selective push
+        if only_codes:
+            only_set     = {c.strip().upper() for c in only_codes}
+            source_users = [u for u in source_users if str(u.employee_code).strip().upper() in only_set]
+            if not source_users:
+                raise RuntimeError("None of the selected employee codes were found in the backup.")
+
+        _log(task_id, f"Found {len(source_users)} user(s) to push for {source_ip}.")
 
         # ── Fetch fingerprints from dbo.backup_fingerprints ───────────────────
         cur.execute(
@@ -259,10 +267,9 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str) -> No
 
         for i, user in enumerate(source_users):
             emp_code  = str(user.employee_code).strip().upper()
-            name      = user.employee_name  or ""
-            pin_pwd   = user.pin_password   or ""
+            name      = user.employee_name or ""
             privilege = int(user.privilege_level or 0)
-            src_uid   = int(user.access_number   or 0)
+            pin_pwd   = user.pin_password or ""
 
             # Update progress smoothly across the 30–60 range
             pct = 30 + int((i / total_users) * 30)
@@ -273,25 +280,17 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str) -> No
                 _bump(task_id, "users_skipped")
                 continue
 
-            # Prefer the original uid slot; fall back to next available
-            uid_taken = any(
-                u.uid == src_uid and str(u.user_id).strip().upper() != emp_code
-                for u in existing_target
-            )
-            if src_uid > 0 and not uid_taken:
-                target_uid = src_uid
-            else:
-                max_uid   += 1
-                target_uid = max_uid
-            max_uid = max(max_uid, target_uid)
+            # Assign a fresh sequential uid slot (1–65535).
+            max_uid   += 1
+            target_uid = max_uid
 
             try:
                 zk_target.set_user(
                     uid=target_uid,
+                    user_id=emp_code,
                     name=name,
                     privilege=privilege,
                     password=pin_pwd,
-                    user_id=emp_code,
                     card=0,
                 )
                 time.sleep(0.1)
@@ -708,3 +707,30 @@ def api_sync_logs():
             for t in recent
         ],
     })
+
+
+# ── POST /sync/api/push-selected ─────────────────────────────────────────────
+@sync_to_new_device_bp.route("/sync/api/push-selected", methods=["POST"])
+@loggedin_required()
+def api_push_selected():
+    """
+    Push only the specified employee_codes from the source device backup
+    to the target ZK device.
+    Body JSON: { source_ip, target_ip, employee_codes: [...] }
+    """
+    data      = request.get_json(silent=True) or {}
+    source_ip = (data.get("source_ip") or "").strip()
+    target_ip = (data.get("target_ip") or "").strip()
+    codes     = [str(c).strip().upper() for c in (data.get("employee_codes") or []) if c]
+    operator  = session.get("username", "System")
+
+    if not source_ip or not target_ip:
+        return jsonify({"status": "error", "message": "source_ip and target_ip are required."}), 400
+    if source_ip == target_ip:
+        return jsonify({"status": "error", "message": "Source and target devices must be different."}), 400
+    if not codes:
+        return jsonify({"status": "error", "message": "No employee codes provided."}), 400
+
+    task_id = _new_task(source_ip, target_ip, operator)
+    _executor.submit(_run_sync, task_id, source_ip, target_ip, operator, codes)
+    return jsonify({"status": "success", "task_id": task_id})

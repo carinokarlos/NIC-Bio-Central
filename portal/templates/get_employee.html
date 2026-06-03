@@ -6,14 +6,21 @@
 <style>
     /* --- Shared Variables --- */
     :root {
-        --bg-page: #f3f4f6;
+        --bg-page: #0a0a12;
         --bg-surface: #ffffff;
-        --bg-muted: #f9fafb;
-        --bg-hover: #f3f4f6;
-        --border: #e5e7eb;
-        --text-primary: #111827;
-        --text-secondary: #6b7280;
-        --text-muted: #9ca3af;
+        --bg-muted: #f8f9fb;
+        --bg-hover: #eff6ff;
+        --border: #e4e7ec;
+        --text-primary: #101828;
+        --text-secondary: #475467;
+        --text-muted: #98a2b3;
+        /* ── Page accent: Blue (card-blue #3b82f6) ── */
+        --accent:        #3b82f6;
+        --accent-dark:   #1d4ed8;
+        --accent-light:  #eff6ff;
+        --accent-glow:   rgba(59,130,246,.15);
+        --accent-grad:   linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+        /* Keep legacy aliases used in existing markup */
         --blue-bg: #eff6ff;
         --blue-text: #1d4ed8;
         --green-bg: #f0fdf4;
@@ -27,11 +34,70 @@
         --radius-md: 8px;
         --radius-lg: 12px;
         --bento-radius: 20px;
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-xs: 0 1px 2px rgba(0,0,0,.05);
+        --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+        --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
     }
 
-    /* --- Light Bento Grid Theme --- */
+    body { background: var(--bg-page) !important; font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+
+    /* ── Master-template Header Card ── */
+    .header-card {
+        background: var(--accent-grad);
+        border-radius: var(--bento-radius);
+        padding: 1.75rem 2rem;
+        display: flex; justify-content: space-between;
+        align-items: center; flex-wrap: wrap; gap: 1.5rem;
+        box-shadow: var(--shadow-md);
+        position: relative; overflow: hidden;
+        margin-bottom: 0;
+    }
+    .header-card::before {
+        content: ''; position: absolute; top: -40px; right: -40px;
+        width: 180px; height: 180px; border-radius: 50%;
+        background: rgba(255,255,255,.06); pointer-events: none;
+    }
+    .header-card::after {
+        content: ''; position: absolute; bottom: -60px; right: 80px;
+        width: 140px; height: 140px; border-radius: 50%;
+        background: rgba(255,255,255,.04); pointer-events: none;
+    }
+    .header-left { display: flex; align-items: center; gap: 1rem; }
+    .header-icon-box {
+        width: 52px; height: 52px;
+        background: rgba(255,255,255,.18);
+        border-radius: var(--radius-lg);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.375rem; color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .header-title-text { font-size: 1.5rem; font-weight: 700; color: #fff; margin: 0 0 2px; letter-spacing: -.02em; }
+    .header-subtitle-text { font-size: .8125rem; color: rgba(255,255,255,.8); margin: 0; }
+
+    /* ── Accent overrides ── */
+    .search-input:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px var(--accent-glow) !important;
+    }
+    .btn-connect {
+        background: var(--accent-light) !important;
+        color: var(--accent-dark) !important;
+        border-color: #bfdbfe !important;
+    }
+    .btn-connect:hover { background: #dbeafe !important; }
+    .badge-rds { background: var(--accent-light); color: var(--accent-dark); }
+    .badge-rds .badge-dot { background: var(--accent-dark); }
+    #selected-device-name { color: var(--accent) !important; }
+    .dataTables_filter input:focus, .form-input:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px var(--accent-glow) !important;
+    }
+    .log-type.in { color: var(--green-text); font-weight: 600; }
+    .log-type.out { color: var(--red-text); font-weight: 600; }
+    /* Table hover accent */
+    .audit-table tbody tr:hover td { background: var(--bg-hover); }
+
+
     .bento-layout {
         display: flex;
         flex-direction: column;
@@ -503,11 +569,16 @@
 <div class="manager-wrapper">
     <div class="bento-layout">
 
-        <div class="bento-panel stagger-1"
-            style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
-            <h2 class="welcome-title">Terminal Synchronization</h2>
-            <p class="welcome-subtitle" id="header-subtitle">Select a device to view enrolled staff and live attendance
-                logs.</p>
+        <div class="header-card stagger-1 span-full" style="grid-column: 1 / -1;">
+            <div class="header-left">
+                <div class="header-icon-box">
+                    <i data-lucide="network"></i>
+                </div>
+                <div>
+                    <h1 class="header-title-text">Terminal Synchronization</h1>
+                    <p class="header-subtitle-text" id="header-subtitle">Select a device to view enrolled staff and live attendance logs.</p>
+                </div>
+            </div>
         </div>
 
         <div class="view-section stagger-2" id="view-devices">

@@ -2,23 +2,28 @@
 
 {% block content %}
 <style>
-  /* ── Master Theme (Light Theme from Audit Logs) ── */
+  /* ── Master Theme ── */
   :root {
-    --bg-page: #f3f4f6;
+    --bg-page: #0a0a12;
     --bg-surface: #ffffff;
     --bg-muted: #f9fafb;
-    --border: #e5e7eb;
-    --border-light: #e5e7eb;
-    --text-primary: #111827;
-    --text-secondary: #6b7280;
-    --text-muted: #9ca3af;
+    --border: #e4e7ec;
+    --border-light: #e4e7ec;
+    --text-primary: #101828;
+    --text-secondary: #475467;
+    --text-muted: #98a2b3;
 
-    --accent: #3b82f6;
+    /* ── Page accent: Purple (card-purple #8b5cf6) ── */
+    --accent:       #8b5cf6;
+    --accent-dark:  #6d28d9;
+    --accent-light: #f5f3ff;
+    --accent-glow:  rgba(139,92,246,.15);
+    --accent-grad:  linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%);
     --success: #10b981;
     --error: #ef4444;
 
-    --blue-bg: #eff6ff;
-    --blue-text: #1d4ed8;
+    --blue-bg: #f5f3ff;
+    --blue-text: #6d28d9;
     --green-bg: #f0fdf4;
     --green-text: #15803d;
     --red-bg: #fef2f2;
@@ -26,20 +31,20 @@
 
     /* Table Colors */
     --tbl-bg: #ffffff;
-    --tbl-head-bg: #f9fafb;
-    --tbl-border: #e5e7eb;
-    --tbl-text: #111827;
-    --tbl-muted: #6b7280;
-    --tbl-hover: #f3f4f6;
-    --tbl-selected: #eff6ff;
-    --tbl-sel-border: #3b82f6;
+    --tbl-head-bg: #faf9ff;
+    --tbl-border: #e4e7ec;
+    --tbl-text: #101828;
+    --tbl-muted: #475467;
+    --tbl-hover: #f5f3ff;
+    --tbl-selected: #f5f3ff;
+    --tbl-sel-border: #8b5cf6;
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --bento-radius: 20px;
   }
 
-  body {
-    color: var(--text-primary) !important;
-  }
+  body { background: var(--bg-page) !important; color: var(--text-primary) !important; font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 
   /* --- Layout & Spacing Tightened --- */
   .dashboard-wrapper {
@@ -61,58 +66,34 @@
 
   .page-header-bar {
     width: 100%;
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
+    background: var(--accent-grad);
     border-radius: 16px;
     display: flex;
     align-items: center;
-    padding: 1rem 1.5rem;
+    padding: 1.75rem 1.5rem;
     gap: 1.5rem;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 14px rgba(139,92,246,.3);
     animation: fadeInDown 0.5s ease-out forwards;
+    position: relative; overflow: hidden;
+  }
+  .page-header-bar::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: rgba(255,255,255,.06); pointer-events: none;
   }
 
   .header-icon-wrap {
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, #4da3ff, #3b82f6);
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,.18);
     border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
   }
 
-  .header-icon-wrap i {
-    font-size: 1.4rem;
-    color: #fff;
-  }
+  .header-icon-wrap i { font-size: 1.4rem; color: #fff; }
 
-  .header-left-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex: 1;
-  }
-
-  .welcome-title {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
-  .welcome-subtitle {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin: 4px 0 0 0;
-  }
-
-  .header-divider {
-    width: 1px;
-    height: 40px;
-    background: var(--border);
-  }
+  .welcome-title { font-size: 1.35rem; font-weight: 700; color: #fff; margin: 0; }
+  .welcome-subtitle { font-size: 0.8rem; color: rgba(255,255,255,.8); margin: 4px 0 0 0; }
 
   /* ── Stepper ── */
   .step-chips {
@@ -150,14 +131,14 @@
   }
 
   .step-chip.active {
-    border-color: #bfdbfe;
-    background: var(--blue-bg);
-    color: var(--blue-text);
+    border-color: #ddd6fe;
+    background: var(--accent-light);
+    color: var(--accent-dark);
   }
 
   .step-chip.active .chip-num {
-    border-color: var(--blue-text);
-    color: var(--blue-text);
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .step-chip.done {
@@ -474,7 +455,7 @@
   }
 
   .btn-proceed {
-    background: linear-gradient(135deg, #4da3ff, #3b82f6);
+    background: linear-gradient(135deg, #a78bfa, #8b5cf6);
     color: #fff;
     border: none;
     padding: 10px 22px;
@@ -601,7 +582,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: linear-gradient(135deg, #4da3ff, #3b82f6);
+    background: linear-gradient(135deg, #a78bfa, #8b5cf6);
     color: #fff;
     border: none;
     padding: 10px;
@@ -653,15 +634,13 @@
   <div class="dashboard-content">
 
     <div class="page-header-bar">
-      <div class="header-left-group">
         <div class="header-icon-wrap"><i class="fas fa-exchange-alt"></i></div>
-        <div class="page-header-left">
+        <div>
           <h1 class="welcome-title">Employee Copy</h1>
           <p class="welcome-subtitle">Select a store, pick employees, then assign target locations.</p>
         </div>
-      </div>
-      <div class="header-divider"></div>
-      <div class="step-chips">
+        <div style="margin-left: auto;">
+        <div class="step-chips">
         <div class="step-chip active" id="step1-chip">
           <div class="chip-num" id="step1-num">1</div><span>Select Store</span>
         </div>
@@ -673,6 +652,7 @@
         <div class="step-chip" id="step3-chip">
           <div class="chip-num" id="step3-num">3</div><span>Assign Target</span>
         </div>
+      </div>
       </div>
     </div>
 
@@ -805,7 +785,7 @@
             <tbody id="targetStoreBody">
               {% for device in devices %}
               <tr class="target-row">
-                <td><input type="radio" name="targetStore" value="{{ device.ip }}" class="target-cb" style="accent-color: #3b82f6;">
+                <td><input type="radio" name="targetStore" value="{{ device.ip }}" class="target-cb" style="accent-color: #8b5cf6;">
                 </td>
                 <td><strong>{{ device.name }}</strong></td>
                 <td style="color:var(--tbl-muted);">{{ device.ip }}</td>
@@ -967,7 +947,7 @@
         const tr = document.createElement('tr');
         tr.className = `clickable-row emp-row ${isChecked ? 'selected' : ''}`;
         tr.innerHTML = `
-                <td class="cb-col"><input type="checkbox" class="emp-cb" ${isChecked ? 'checked' : ''} style="accent-color:#3b82f6;"></td>
+                <td class="cb-col"><input type="checkbox" class="emp-cb" ${isChecked ? 'checked' : ''} style="accent-color:#8b5cf6;"></td>
                 <td style="font-family:monospace;font-size:0.82rem;color:var(--tbl-muted);">${u.code}</td>
                 <td><strong>${u.name}</strong></td>
               `;

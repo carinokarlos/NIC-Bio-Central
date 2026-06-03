@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -8,321 +9,367 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
 
 <style>
-    /* --- Shared Light Theme Variables --- */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
     :root {
-        --bg-page: #f3f4f6;
-        --bg-surface: #ffffff;
-        --bg-muted: #f9fafb;
-        --bg-hover: #f3f4f6;
-        --border: #e5e7eb;
-        --text-primary: #111827;
-        --text-secondary: #6b7280;
-        --text-muted: #9ca3af;
-        --blue-bg: #eff6ff;
-        --blue-text: #1d4ed8;
-        --eggshell: #f0ead6;
-        --radius-sm: 6px;
-        --radius-md: 8px;
-        --radius-lg: 12px;
-        --bento-radius: 20px;
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --bg-page:       #0a0a12;
+        --bg-surface:    #ffffff;
+        --bg-muted:      #f8f9fb;
+        --bg-hover:      #fff5f5;
+        --border:        #e4e7ec;
+        --text-primary:  #101828;
+        --text-secondary:#475467;
+        --text-muted:    #98a2b3;
+        /* ── Page accent: Red (card-red #ef4444) ── */
+        --blue:          #ef4444;
+        --blue-light:    #fef2f2;
+        --blue-dark:     #b91c1c;
+        --indigo-grad:   linear-gradient(135deg, #991b1b 0%, #ef4444 100%);
+        --green:         #16a34a;
+        --red:           #dc2626;
+        --radius-sm:     6px;
+        --radius-md:     10px;
+        --radius-lg:     14px;
+        --radius-xl:     20px;
+        --shadow-xs:     0 1px 2px rgba(0,0,0,.05);
+        --shadow-sm:     0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+        --shadow-md:     0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+        --shadow-lg:     0 10px 30px rgba(0,0,0,.1);
     }
+
+    *, *::before, *::after { box-sizing: border-box; }
 
     body {
-        background-color: var(--bg-page) !important;
-    }
-
-    /* --- Light Bento Grid Theme --- */
-    .manager-wrapper {
-        flex: 1;
-        width: 100%;
-        padding: 2rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        background: var(--bg-page) !important;
         font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     }
 
+    /* ── Layout ── */
+    .manager-wrapper {
+        flex: 1; width: 100%;
+        padding: 2rem 1.5rem;
+        display: flex; flex-direction: column; align-items: center;
+    }
     .bento-layout {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        width: 100%;
-        max-width: 1200px;
-        margin: 0 auto 2rem auto;
+        display: grid; grid-template-columns: 1fr;
+        gap: 1.25rem; width: 100%; max-width: 1280px;
+        margin: 0 auto 2rem;
+    }
+    .span-full { grid-column: 1 / -1; }
+
+    /* ── Animations ── */
+    @keyframes popIn {
+        from { opacity:0; transform: scale(.95) translateY(16px); }
+        to   { opacity:1; transform: scale(1)  translateY(0);     }
+    }
+    .pop-in-container { animation: popIn .6s cubic-bezier(.16,1,.3,1) forwards; }
+    .stagger-1 { animation: popIn .6s cubic-bezier(.16,1,.3,1) forwards; animation-delay:.08s; opacity:0; }
+    .stagger-2 { animation: popIn .6s cubic-bezier(.16,1,.3,1) forwards; animation-delay:.18s; opacity:0; }
+
+    /* ── Header Card ── */
+    .header-card {
+        background: var(--indigo-grad);
+        border-radius: var(--radius-xl);
+        padding: 1.75rem 2rem;
+        display: flex; justify-content: space-between;
+        align-items: center; flex-wrap: wrap; gap: 1.5rem;
+        box-shadow: var(--shadow-md);
+        position: relative; overflow: hidden;
+    }
+    .header-card::before {
+        content: '';
+        position: absolute; top: -40px; right: -40px;
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.06);
+        pointer-events: none;
+    }
+    .header-card::after {
+        content: '';
+        position: absolute; bottom: -60px; right: 80px;
+        width: 140px; height: 140px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.04);
+        pointer-events: none;
+    }
+    .header-left { display: flex; align-items: center; gap: 1rem; }
+    .header-icon {
+        width: 52px; height: 52px;
+        background: rgba(255,255,255,.15);
+        border-radius: var(--radius-lg);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.375rem; color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .header-title {
+        font-size: 1.5rem; font-weight: 700;
+        color: #fff; margin: 0 0 2px;
+        letter-spacing: -.02em;
+    }
+    .header-subtitle {
+        font-size: 0.8125rem; color: rgba(255,255,255,.75); margin: 0;
     }
 
-    .bento-panel {
+    /* ── Filter Panel ── */
+    .filter-panel {
         background: var(--bg-surface);
         border: 1px solid var(--border);
-        border-radius: var(--bento-radius);
+        border-radius: var(--radius-xl);
         box-shadow: var(--shadow-sm);
-        padding: 1.5rem;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        padding: 1.25rem 1.5rem;
+        display: flex; align-items: flex-end;
+        flex-wrap: wrap; gap: 1rem;
     }
-
-    .bento-panel:hover {
-        box-shadow: var(--shadow-md);
-    }
-
-    .span-full {
-        grid-column: 1 / -1;
-    }
-
-    /* --- Pop-In Animation --- */
-    @keyframes popIn {
-        0% { opacity: 0; transform: scale(0.9) translateY(20px); }
-        100% { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    .pop-in-container { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .stagger-1 { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.1s; opacity: 0; }
-    .stagger-2 { animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.2s; opacity: 0; }
-
-    /* --- Typography --- */
-    .welcome-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 4px;
-        margin-top: 0;
-    }
-
-    .welcome-subtitle {
-        font-size: 0.875rem;
+    .filter-group { display: flex; flex-direction: column; flex: 1; min-width: 160px; }
+    .filter-group.location-group { flex: 2; min-width: 220px; }
+    .filter-label {
+        display: flex; align-items: center; gap: 5px;
+        font-size: 0.6875rem; font-weight: 600;
         color: var(--text-secondary);
-        margin-bottom: 0;
-    }
-
-    /* --- Filter Controls Styling --- */
-    .filter-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-        width: 100%;
-        margin-top: 1rem;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .form-label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-secondary);
+        text-transform: uppercase; letter-spacing: .06em;
         margin-bottom: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
-
-    .form-label i {
-        width: 14px;
-        height: 14px;
-    }
-
+    .filter-label svg { width:13px; height:13px; }
     .form-input {
-        width: 100%;
-        padding: 8px 12px;
-        font-size: 0.875rem;
+        padding: 8px 11px;
+        font-size: 0.8125rem;
         border-radius: var(--radius-md);
         border: 1px solid var(--border);
         background: var(--bg-surface);
         color: var(--text-primary);
         outline: none;
         transition: border-color .15s, box-shadow .15s;
+        font-family: inherit;
     }
-
     .form-input:focus {
-        border-color: var(--blue-text);
-        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
     }
 
-    /* --- Select2 Light Theme Overrides (Updated for Multiple) --- */
-    .select2-container--default .select2-selection--multiple {
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius-md) !important;
-        background-color: var(--bg-surface) !important;
-        min-height: 38px !important;
-    }
-    .select2-container--default .select2-selection--multiple .select2-selection__choice {
-        background-color: var(--bg-muted);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        color: var(--text-primary);
-        font-size: 0.8125rem;
-        margin-top: 5px;
-    }
-    .select2-dropdown {
-        border-color: var(--border) !important;
-        box-shadow: var(--shadow-md);
+    /* Reset button */
+    .btn-reset {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 16px;
+        font-size: 0.8125rem; font-weight: 500;
         border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all .15s;
+        white-space: nowrap;
+        font-family: inherit;
+        align-self: flex-end;
+    }
+    .btn-reset:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        color: var(--red);
+    }
+    .btn-reset svg { width:14px; height:14px; }
+
+    /* ── Table Panel ── */
+    .table-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-sm);
+        padding: 1.5rem;
         overflow: hidden;
     }
-    .select2-results__option {
-        font-size: 0.875rem;
-        color: var(--text-primary);
-    }
-    .select2-container--default .select2-results__option--highlighted[aria-selected] {
-        background-color: var(--blue-bg) !important;
-        color: var(--blue-text) !important;
-    }
 
-    /* --- DataTables Bento Grid Overrides --- */
-    .audit-table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: auto;
-    }
+    /* ── DataTables overrides ── */
+    .audit-table { width:100%; border-collapse:collapse; }
 
-    table.dataTable {
-        margin-top: 1rem !important;
-        margin-bottom: 1rem !important;
-        border-bottom: 1px solid var(--border);
-    }
+    table.dataTable { margin-top:.75rem !important; margin-bottom:.75rem !important; }
 
     table.dataTable thead th {
-        font-size: 0.6875rem;
-        font-weight: 600;
-        letter-spacing: .07em;
-        text-transform: uppercase;
+        font-size: .6875rem; font-weight: 600;
+        letter-spacing: .07em; text-transform: uppercase;
         color: var(--text-secondary);
-        padding: 12px 16px !important;
-        text-align: left;
-        background: var(--bg-surface);
+        padding: 10px 14px !important;
+        background: var(--bg-muted);
         border-bottom: 1px solid var(--border) !important;
+        border-top: 1px solid var(--border) !important;
     }
+    table.dataTable thead th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+    table.dataTable thead th:last-child  { border-radius: 0 var(--radius-sm) 0 0; }
 
     table.dataTable tbody tr {
         border-bottom: 1px solid var(--border) !important;
         background-color: var(--bg-surface) !important;
+        transition: background .1s;
     }
-
-    table.dataTable tbody tr:nth-child(even) {
-        background-color: var(--bg-muted) !important;
-    }
-
-    table.dataTable tbody tr:hover td {
-        background: var(--bg-hover) !important;
-    }
-
+    table.dataTable tbody tr:nth-child(even) { background-color: var(--bg-muted) !important; }
+    table.dataTable tbody tr:hover td       { background: var(--bg-hover) !important; }
     table.dataTable tbody td {
-        padding: 12px 16px !important;
-        font-size: 0.8125rem;
-        color: var(--text-primary);
-        vertical-align: middle;
-        border-top: none !important;
+        padding: 11px 14px !important;
+        font-size: .8125rem; color: var(--text-primary);
+        vertical-align: middle; border-top: none !important;
     }
 
-    /* DataTables Controls */
-    .dataTables_wrapper .dataTables_info, 
-    .dataTables_wrapper .dataTables_length label, 
+    /* DT controls */
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_length label,
     .dataTables_wrapper .dataTables_filter label {
-        font-size: 0.8125rem;
-        color: var(--text-secondary) !important;
+        font-size: .8125rem; color: var(--text-secondary) !important;
     }
-
     .dataTables_filter input {
         border: 1px solid var(--border) !important;
         border-radius: var(--radius-md) !important;
-        padding: 8px 16px !important;
-        font-size: 0.875rem;
-        outline: none;
-        min-width: 300px;
+        padding: 7px 14px !important;
+        font-size: .875rem; outline: none;
+        min-width: 260px;
         transition: border-color .15s, box-shadow .15s;
+        font-family: inherit;
     }
-    
     .dataTables_filter input:focus {
-        border-color: var(--blue-text) !important;
-        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1) !important;
+        border-color: var(--blue) !important;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12) !important;
     }
 
+    /* DT buttons */
     .dt-buttons .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.8125rem;
-        font-weight: 500;
-        padding: 6px 14px;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: .8125rem; font-weight: 500;
+        padding: 6px 13px;
         border-radius: var(--radius-md);
         cursor: pointer;
         border: 1px solid var(--border) !important;
         background: var(--bg-surface) !important;
         color: var(--text-primary) !important;
-        transition: background .15s;
-        margin-right: 8px;
+        transition: background .15s, box-shadow .15s;
+        margin-right: 6px; font-family: inherit;
+    }
+    .dt-buttons .btn:hover { background: var(--bg-hover) !important; box-shadow: var(--shadow-xs); }
+    .dt-buttons .btn i, .dt-buttons .btn svg { width:14px; height:14px; }
+
+    .dt-buttons .btn.custom-export-btn {
+        background: var(--blue) !important;
+        border-color: var(--blue-dark) !important;
+        color: #fff !important;
+    }
+    .dt-buttons .btn.custom-export-btn:hover {
+        background: var(--blue-dark) !important;
     }
 
-    .dt-buttons .btn:hover {
-        background: var(--bg-muted) !important;
-    }
-
-    .dt-buttons .btn i {
-        width: 14px;
-        height: 14px;
-    }
-    
     .dataTables_paginate .paginate_button {
-        font-size: 0.8125rem;
+        font-size: .8125rem;
         padding: 5px 10px !important;
         border-radius: var(--radius-md) !important;
         border: 1px solid transparent !important;
     }
-    
     .dataTables_paginate .paginate_button.current {
         background: var(--bg-surface) !important;
         border: 1px solid var(--border) !important;
         font-weight: 600;
     }
 
-    /* --- NEW Expandable Row & Selection Styles --- */
-    td.details-control { cursor: pointer; text-align: center; color: var(--blue-text); }
-    .child-table-wrapper { background: var(--bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin: 0.5rem 0; }
-    .child-table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: var(--shadow-sm); border-radius: var(--radius-sm); overflow: hidden;}
-    .child-table th, .child-table td { padding: 8px 12px; border: 1px solid var(--border); font-size: 0.75rem; text-align: left; }
-    .child-table th { background: var(--bg-muted); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; }
-    .custom-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--blue-text); }
+    /* ── Child rows ── */
+    td.details-control { cursor:pointer; text-align:center; color: var(--blue); }
+    .child-table-wrapper {
+        background: var(--bg-page); padding: 1rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border); margin: .5rem 0;
+    }
+    .child-table-title {
+        display: flex; align-items: center; gap: 6px;
+        font-weight: 600; font-size: .85rem;
+        color: var(--text-primary); margin-bottom: 10px;
+    }
+    .child-table {
+        width:100%; border-collapse:collapse;
+        background:#fff; box-shadow: var(--shadow-xs);
+        border-radius: var(--radius-sm); overflow:hidden;
+    }
+    .child-table th, .child-table td {
+        padding: 8px 12px; border: 1px solid var(--border);
+        font-size: .75rem; text-align:left;
+    }
+    .child-table th {
+        background: var(--bg-muted); color: var(--text-secondary);
+        font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+    }
+    .child-table tbody tr:hover td { background: var(--bg-hover); }
+
+    /* Badge */
+    .punch-badge {
+        display: inline-block; padding: 2px 8px;
+        border-radius: 999px; font-size: .7rem; font-weight:600;
+    }
+    .punch-in  { background:#dcfce7; color:#15803d; }
+    .punch-out { background:#fee2e2; color:#b91c1c; }
+    .punch-unk { background:#f3f4f6; color:#6b7280; }
+
+    /* Misc */
+    .custom-cb { width:16px; height:16px; cursor:pointer; accent-color: var(--blue); }
+    .access-col-hidden { display:none; }
+    .emp-code-cell {
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .775rem; color: var(--text-secondary);
+    }
+
+    /* Select2 */
+    .select2-container--default .select2-selection--multiple {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        background: var(--bg-surface) !important;
+        min-height: 36px !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background: var(--blue-light); border: 1px solid #bfdbfe;
+        border-radius: 4px; color: var(--blue-dark);
+        font-size: .8rem; margin-top:4px;
+    }
+    .select2-dropdown { border-color: var(--border) !important; box-shadow: var(--shadow-md); border-radius: var(--radius-md); overflow:hidden; }
+    .select2-results__option { font-size:.875rem; color: var(--text-primary); }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background: var(--blue-light) !important; color: var(--blue-dark) !important;
+    }
 </style>
 
 <div class="manager-wrapper">
   <div class="bento-layout">
     
-    <div class="bento-panel stagger-1 span-full">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
-        
-        <div style="flex: 1; min-width: 300px;">
-          <h1 class="welcome-title">Master Database</h1>
-          <p class="welcome-subtitle">Select employees to view or export their full historical logs.</p>
+    <!-- Header Card -->
+    <div class="header-card stagger-1 span-full">
+      <div class="header-left">
+        <div class="header-icon">
+          <i class="fas fa-database"></i>
         </div>
-
-        <div class="filter-grid" style="flex: 2; margin-top: 0;">
-          <div class="form-group">
-            <label class="form-label"><i data-lucide="calendar"></i> Date From</label>
-            <input type="date" id="date-from" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label"><i data-lucide="calendar"></i> Date To</label>
-            <input type="date" id="date-to" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label"><i data-lucide="map-pin"></i> Location</label>
-            <select id="location-filter" class="select2" multiple="multiple">
-              {% for loc in locations %}
-                <option value="{{ loc }}">{{ loc }}</option>
-              {% endfor %}
-            </select>
-          </div>
+        <div>
+          <h1 class="header-title">Master Database</h1>
+          <p class="header-subtitle">View, filter, and export employee attendance records.</p>
         </div>
-
       </div>
     </div>
 
-    <div class="table-container pop-in-container stagger-2 span-full">
-      <div class="bento-panel">
+    <!-- Filter Panel -->
+    <div class="filter-panel stagger-1 span-full">
+      <div class="filter-group">
+        <label class="filter-label"><i data-lucide="calendar"></i> Date From</label>
+        <input type="date" id="date-from" class="form-input">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label"><i data-lucide="calendar"></i> Date To</label>
+        <input type="date" id="date-to" class="form-input">
+      </div>
+      <div class="filter-group location-group">
+        <label class="filter-label"><i data-lucide="map-pin"></i> Location</label>
+        <select id="location-filter" class="select2" multiple="multiple">
+          {% for loc in locations %}
+            <option value="{{ loc }}">{{ loc }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn-reset" id="btn-reset-filters" title="Clear all filters">
+        <i data-lucide="rotate-ccw"></i> Reset
+      </button>
+    </div>
+
+    <div class="pop-in-container stagger-2 span-full">
+      <div class="table-panel">
         <table id="masterTable" class="audit-table">
           <thead>
             <tr>
@@ -332,6 +379,7 @@
               <th>Name</th>
               <th>Latest Location</th>
               <th>Latest Timestamp</th>
+              <th class="access-col-hidden">Access Code</th>
             </tr>
           </thead>
           <tbody>
@@ -339,10 +387,13 @@
               <tr>
                 <td><input type="checkbox" class="emp-cb custom-cb" value="{{ log.employee_code }}"></td>
                 <td class="details-control"><i data-lucide="chevron-right"></i></td>
-                <td><span style="font-family: ui-monospace, monospace; color: var(--text-secondary);">{{ log.employee_code }}</span></td>
+                <td><span class="emp-code-cell">{{ log.employee_code }}</span></td>
                 <td style="font-weight: 500;">{{ log.employee_name or 'UNKNOWN' }}</td>
                 <td>{{ log.location_name or 'UNREGISTERED' }}</td>
-                <td>{{ log.punch_time }}</td>
+                <td data-order="{{ log.punch_time.strftime('%Y-%m-%d %H:%M:%S') if log.punch_time else '' }}">
+                    {{ log.punch_time.strftime('%b %d, %Y  %I:%M %p') if log.punch_time else '—' }}
+                </td>
+                <td class="access-col-hidden">{{ log.access_number or 'N/A' }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -378,7 +429,8 @@ $(document).ready(function() {
     var table = $('#masterTable').DataTable({
         pageLength: 25,
         columnDefs: [
-            { targets: [0, 1], orderable: false } // Disable sorting on checkboxes and chevron
+            { targets: [0, 1], orderable: false }, // Disable sorting on checkboxes and chevron
+            { targets: [6], visible: false }        // Access Code — hidden in UI, included in CSV
         ],
         order: [[ 5, 'desc' ]], // Default sort by Latest Timestamp
         dom: '<"row align-items-center mb-3"<"col-md-6 d-flex flex-wrap gap-2"B><"col-md-6 d-flex justify-content-end"f>>rt<"row align-items-center mt-3"<"col-md-6"i><"col-md-6 d-flex justify-content-end"p>>',
@@ -391,7 +443,16 @@ $(document).ready(function() {
                     executeCustomExport(node);
                 }
             },
-            { extend: 'csv', text: '<i data-lucide="file-spreadsheet"></i> CSV (View)', className: 'btn' },
+            {
+                extend: 'csv',
+                text: '<i data-lucide="file-spreadsheet"></i> CSV (View)',
+                className: 'btn',
+                exportOptions: {
+                    columns: [2, 3, 4, 5, 6],   // Emp ID, Name, Location, Timestamp, Access Code
+                    orthogonal: 'display'
+                },
+                title: 'BioCentral_Master'
+            },
             { extend: 'print', text: '<i data-lucide="printer"></i> Print', className: 'btn' }
         ],
         language: {
@@ -422,19 +483,30 @@ $(document).ready(function() {
 
     // --- DRILL DOWN LOGIC ---
     function formatChildRow(data) {
-        let html = '<div class="child-table-wrapper"><div style="margin-bottom:8px; font-weight:600; font-size:0.85rem; color: var(--text-primary);">Historical Logs</div><table class="child-table">';
-        html += '<thead><tr><th>Log ID</th><th>Location</th><th>Timestamp</th><th>Punch Type</th><th>Verify Type</th></tr></thead><tbody>';
-        
+        let html = `<div class="child-table-wrapper">
+            <div class="child-table-title">
+                <i data-lucide="clock" style="width:15px;height:15px;color:var(--blue)"></i>
+                Historical Logs <span style="font-weight:400;color:var(--text-secondary);margin-left:6px;">(${data.length} record${data.length !== 1 ? 's' : ''})</span>
+            </div>
+            <table class="child-table">
+                <thead><tr><th>Log ID</th><th>Location</th><th>Timestamp</th><th>Punch Type</th><th>Verify Type</th></tr></thead>
+                <tbody>`;
+
         if (data.length === 0) {
-            html += '<tr><td colspan="5" style="text-align:center;">No historical logs found.</td></tr>';
+            html += '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:1.5rem;">No logs found for the selected date range.</td></tr>';
         } else {
             data.forEach(function(log) {
+                let punchLabel, punchClass;
+                if      (log.punch_type == 0) { punchLabel = 'Check In';  punchClass = 'punch-in';  }
+                else if (log.punch_type == 1) { punchLabel = 'Check Out'; punchClass = 'punch-out'; }
+                else                          { punchLabel = log.punch_type ?? '—'; punchClass = 'punch-unk'; }
+
                 html += `<tr>
-                    <td>${log.log_id}</td>
-                    <td>${log.location_name || 'UNREGISTERED'}</td>
+                    <td style="color:var(--text-muted);font-family:monospace;">${log.log_id}</td>
+                    <td>${log.location_name || '<span style="color:var(--text-muted)">UNREGISTERED</span>'}</td>
                     <td>${log.punch_time}</td>
-                    <td>${log.punch_type}</td>
-                    <td>${log.verify_type}</td>
+                    <td><span class="punch-badge ${punchClass}">${punchLabel}</span></td>
+                    <td>${log.verify_type ?? '—'}</td>
                 </tr>`;
             });
         }
@@ -456,8 +528,16 @@ $(document).ready(function() {
             $(this).html('<i data-lucide="loader" class="fa-spin"></i>');
             lucide.createIcons();
             
+            var dateFrom = $('#date-from').val();
+            var dateTo   = $('#date-to').val();
+            var apiUrl   = '/api/employee-logs/' + encodeURIComponent(empCode);
+            var params   = [];
+            if (dateFrom) params.push('date_from=' + dateFrom);
+            if (dateTo)   params.push('date_to='   + dateTo);
+            if (params.length) apiUrl += '?' + params.join('&');
+
             $.ajax({
-                url: '/api/employee-logs/' + empCode,
+                url: apiUrl,
                 method: 'GET',
                 success: function(response) {
                     if(response.status === 'success') {
@@ -530,31 +610,51 @@ $(document).ready(function() {
         });
     }
 
-    // --- FILTERING LOGIC ---
-    $.fn.dataTable.ext.search.push(
-        function(settings, data, dataIndex) {
-            var min = $('#date-from').val();
-            var max = $('#date-to').val();
-            var dateStr = data[5] ? data[5].split(' ')[0] : ""; // Index 5 is Latest Timestamp
-
-            if (min === "" && max === "") return true;
-            if (min !== "" && dateStr < min) return false;
-            if (max !== "" && dateStr > max) return false;
-            return true;
-        }
-    );
-
+    // Date filters do NOT hide rows from the main table.
+    // They are passed to the drill-down API and export only.
+    // Changing a date just redraws any open child row with the new range.
     $('#date-from, #date-to').on('change', function() {
-        table.draw();
+        // Close all open child rows so stale data isn't shown
+        table.rows().every(function() {
+            if (this.child.isShown()) {
+                this.child.hide();
+                $(this.node()).removeClass('shown');
+                $(this.node()).find('td.details-control').html('<i data-lucide="chevron-right"></i>');
+            }
+        });
+        lucide.createIcons();
     });
 
-    // Multi-select Regex search for DataTables
+    // ── Reset all filters ──
+    $('#btn-reset-filters').on('click', function() {
+        $('#date-from').val('');
+        $('#date-to').val('');
+        $('#location-filter').val(null).trigger('change'); // clears Select2
+        table.column(4).search('', true, false).draw();
+        // Close any open child rows
+        table.rows().every(function() {
+            if (this.child.isShown()) {
+                this.child.hide();
+                $(this.node()).removeClass('shown');
+                $(this.node()).find('td.details-control').html('<i data-lucide="chevron-right"></i>');
+            }
+        });
+        // Uncheck all checkboxes
+        table.$('input[type="checkbox"].emp-cb').prop('checked', false);
+        $('#selectAll').prop('checked', false).prop('indeterminate', false);
+        lucide.createIcons();
+    });
+
+    // Multi-select location filter — escapes special chars so store names
+    // with parentheses, dots, etc. don't break the DataTables regex search.
     $('#location-filter').on('change', function() {
-        var selectedLocations = $(this).val(); // Returns an array
+        var selectedLocations = $(this).val();
         if (selectedLocations && selectedLocations.length > 0) {
-            // Build a regex like: ^(Kampri|HO Makati 2)$
-            var regexStr = '^(' + selectedLocations.join('|') + ')$';
-            table.column(4).search(regexStr, true, false).draw(); // Index 4 is Latest Location
+            var escaped = selectedLocations.map(function(loc) {
+                return loc.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+            });
+            var regexStr = '^(' + escaped.join('|') + ')$';
+            table.column(4).search(regexStr, true, false).draw(); // col 4 = Latest Location
         } else {
             table.column(4).search('', true, false).draw();
         }

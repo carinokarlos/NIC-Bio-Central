@@ -48,10 +48,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY']        = 'n3wtr3nds!'
 app.config['UPLOAD_FOLDER'] = os.path.abspath(os.path.dirname(__file__))+'/uploads'
 app.config['LDAP_PROVIDER_URL'] = 'ldap://MGSVR01.mgroup.local/'
-app.config['ATC_NAV']           = 'DRIVER={SQL Server};SERVER=MGSVR14.mgroup.local;DATABASE=ATCREP;UID=nav;trusted_connection=yes;READONLY=True;'
-app.config['NIC_NAV']           ='DRIVER={SQL Server};SERVER=MGSVR14.mgroup.local;DATABASE=nicrep;UID=nav;trusted_connection=yes;READONLY=True;'
-app.config['MIS_SysDev']        = 'DRIVER={SQL Server};SERVER=MGSVR14.mgroup.local;DATABASE=MIS_SysDev;UID=nicportal;PWD=n1cp0rtal;READONLY=True;'
-app.config['BIOCENTRAL_DB'] = 'Driver={ODBC Driver 18 for SQL Server};Server=MGSVR14.mgroup.local,1433;Database=biocentral;Trusted_Connection=yes;Network=dbmssocn;TrustServerCertificate=yes;'
+app.config['ATC_NAV']           = 'DRIVER={SQL Server};SERVER=MGSVR17.mgroup.local;DATABASE=ATCREP;UID=nav;trusted_connection=yes;READONLY=True;'
+app.config['NIC_NAV']           ='DRIVER={SQL Server};SERVER=MGSVR17.mgroup.local;DATABASE=nicrep;UID=nav;trusted_connection=yes;READONLY=True;'
+app.config['MIS_SysDev']        = 'DRIVER={SQL Server};SERVER=MGSVR17.mgroup.local;DATABASE=MIS_SysDev;UID=nicportal;PWD=n1cp0rtal;READONLY=True;'
+app.config['BIOCENTRAL_DB'] = 'Driver={ODBC Driver 18 for SQL Server};Server=MGSVR17.mgroup.local,1433;Database=biocentral;Trusted_Connection=yes;Network=dbmssocn;TrustServerCertificate=yes;'
 app.config['MIS_SysDev_connect'] = 'MIS_SysDev'
 
 from routes.store_crud import store_crud_bp
