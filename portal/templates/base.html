@@ -380,6 +380,14 @@
                     <span class="burger-line"></span>
                 </div>
                 <div class="custom-dropdown-menu" id="optionsDropdownMenu">
+                    
+                    <a class="custom-dropdown-item" href="{{ url_for('home') }}" id="navBackBtn" style="display: none; background: rgba(77, 163, 255, 0.1); border: 1px solid rgba(77, 163, 255, 0.2); margin-bottom: 12px;">
+                        <div class="item-icon" style="background: rgba(77, 163, 255, 0.2); color: #4da3ff;">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                        Back to Dashboard
+                    </a>
+
                     <div class="dropdown-label">Workspace</div>
                     
                     <a class="custom-dropdown-item" href="/device-manager">
@@ -445,6 +453,18 @@
         document.addEventListener('DOMContentLoaded', function () {
             const toggleBtn = document.getElementById('optionsToggleBtn');
             const dropdownMenu = document.getElementById('optionsDropdownMenu');
+
+            // Automatically hide or show the "Back to Dashboard" button based on URL
+            const currentPath = window.location.pathname;
+            const navBackBtn = document.getElementById('navBackBtn');
+            if (navBackBtn) {
+                // If on root ('/') or home ('/home'), hide the back button
+                if (currentPath === '/' || currentPath === '/home') {
+                    navBackBtn.style.display = 'none';
+                } else {
+                    navBackBtn.style.display = 'flex';
+                }
+            }
 
             if (toggleBtn && dropdownMenu) {
                 toggleBtn.addEventListener('click', function (e) {
