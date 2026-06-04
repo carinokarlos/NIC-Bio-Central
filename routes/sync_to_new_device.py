@@ -9,9 +9,9 @@ Attendance logs are NOT pushed — ZK devices do not support writing them.
 
 Flow:
   1. Pre-flight  — TCP ping target device
-  2. Push Users  — read dbo.backup_device_users WHERE device_ip = source_ip,
+  2. Push Users  — read dbo.backup_device_users WHERE device_id = source_device_id,
                    set_user() on target preserving uid slot where free
-  3. Push FP     — read dbo.backup_fingerprints WHERE device_ip = source_ip,
+  3. Push FP     — read dbo.backup_fingerprints WHERE device_id = source_device_id,
                    save_user_template() on target
   4. Audit       — write result to dbo.biocentral_audit_logs
 
@@ -111,15 +111,16 @@ def _zk_connect(ip: str, retries: int = MAX_RETRIES):
 # ── TASK STATE HELPERS ───────────────────────────────────────────────────────
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _new_task(source_ip: str, target_ip: str, operator: str) -> str:
+def _new_task(source_device_id: int, source_ip: str, target_ip: str, operator: str) -> str:
     task_id = str(uuid.uuid4())
     with _tasks_lock:
         _tasks[task_id] = {
-            "task_id":     task_id,
-            "status":      "pending",
-            "source_ip":   source_ip,
-            "target_ip":   target_ip,
-            "operator":    operator,
+            "task_id":          task_id,
+            "status":           "pending",
+            "source_device_id": source_device_id,
+            "source_ip":        source_ip,   # display only
+            "target_ip":        target_ip,
+            "operator":         operator,
             "started_at":  datetime.now().isoformat(),
             "finished_at": None,
             "progress":    0,
@@ -174,10 +175,11 @@ def _bump(task_id: str, key: str, amount: int = 1) -> None:
 # ── SYNC ENGINE ──────────────────────────────────────────────────────────────
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str, only_codes: list | None = None) -> None:
+def _run_sync(task_id: str, source_device_id: int, target_ip: str, operator: str, only_codes: list | None = None) -> None:
     """
     Background thread.
-    Reads dbo.backup_device_users and dbo.backup_fingerprints for source_ip
+    Resolves source_device_id → source_ip from dbo.device_registry, then reads
+    dbo.backup_device_users and dbo.backup_fingerprints for that device_id
     and pushes the data to the target ZK device.
 
     only_codes: if provided, only push users whose employee_code is in this list.
@@ -192,17 +194,29 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str, only_
 
         # ── Pre-flight ────────────────────────────────────────────────────────
         _set_progress(task_id, 5, "Verifying devices…")
-        _log(task_id, f"Sync started by {operator}: {source_ip} → {target_ip}")
-
-        tgt_ok, tgt_msg = _ping(target_ip)
-        if not tgt_ok:
-            raise RuntimeError(f"Target device {target_ip} unreachable: {tgt_msg}")
-        _log(task_id, f"Target device {target_ip} is reachable.", "success")
 
         # ── Open SQL Server connection ─────────────────────────────────────────
         _set_progress(task_id, 10, "Reading backup data from SQL Server…")
         db  = get_db_connection()
         cur = db.cursor()
+
+        # Resolve source IP from device_id (used only for ZK connection & display)
+        cur.execute(
+            "SELECT ip_address, bcc FROM dbo.device_registry WHERE device_id = ?",
+            (source_device_id,),
+        )
+        reg_row = cur.fetchone()
+        if not reg_row:
+            raise RuntimeError(f"Device ID {source_device_id} not found in device_registry.")
+        source_ip  = (reg_row.ip_address or "").strip()
+        source_bcc = reg_row.bcc or f"Device {source_device_id}"
+
+        _log(task_id, f"Sync started by {operator}: {source_bcc} (device_id={source_device_id}) → {target_ip}")
+
+        tgt_ok, tgt_msg = _ping(target_ip)
+        if not tgt_ok:
+            raise RuntimeError(f"Target device {target_ip} unreachable: {tgt_msg}")
+        _log(task_id, f"Target device {target_ip} is reachable.", "success")
 
         # ── Fetch users from dbo.backup_device_users ──────────────────────────
         cur.execute(
@@ -218,7 +232,7 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str, only_
 
         if not source_users:
             raise RuntimeError(
-                f"No backed-up users found for device {source_ip}. "
+                f"No backed-up users found for device ID {source_device_id} ({source_bcc}, {source_ip}). "
                 "Run a backup first from the Device Manager."
             )
 
@@ -385,7 +399,7 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str, only_
             s = _tasks[task_id]["summary"]
 
         detail = (
-            f"Sync {source_ip} → {target_ip} | "
+            f"Sync device_id={source_device_id} ({source_bcc}) → {target_ip} | "
             f"Users: {s['users_pushed']} pushed, {s['users_skipped']} skipped | "
             f"Fingerprints: {s['fingerprints_pushed']} pushed, {s['fingerprints_skipped']} skipped | "
             f"Errors: {s['errors']}"
@@ -397,7 +411,7 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str, only_
                     (module, target, action, action_details, action_by, action_at)
                 VALUES ('SYNC', ?, 'SYNC_COMPLETE', ?, ?, GETDATE())
                 """,
-                (f"{source_ip}→{target_ip}", detail, operator),
+                (f"{source_device_id}→{target_ip}", detail, operator),
             )
             db.commit()
         except Exception as audit_exc:
@@ -420,7 +434,7 @@ def _run_sync(task_id: str, source_ip: str, target_ip: str, operator: str, only_
                     (module, target, action, action_details, action_by, action_at)
                 VALUES ('SYNC', ?, 'SYNC_FAILED', ?, ?, GETDATE())
                 """,
-                (f"{source_ip}→{target_ip}", str(exc), operator),
+                (f"{source_device_id}→{target_ip}", str(exc), operator),
             )
             err_db.commit()
             err_cur.close()
@@ -462,24 +476,49 @@ def sync_to_new_device():
 def api_get_devices():
     """
     Return all registered ZK terminals instantly — no ping, online=null.
+    Each device includes last_backup: the most recent BACKUP action timestamp
+    from biocentral_audit_logs (module='DEVICE', action='BACKUP') for that
+    device, resolved via device_registry.device_id.
+    Devices are sorted by last_backup descending (most recently backed-up first),
+    with devices that have never been backed up sorted last.
     Call GET /sync/api/devices/status separately to get live online status.
     """
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
         cur.execute(
-            "SELECT device_id, bcc, ip_address, comms_key, chain_type FROM dbo.device_registry ORDER BY bcc"
+            """
+            SELECT
+                dr.device_id,
+                dr.bcc,
+                dr.ip_address,
+                dr.comms_key,
+                dr.chain_type,
+                MAX(al.action_at) AS last_backup
+            FROM dbo.device_registry dr
+            LEFT JOIN dbo.biocentral_audit_logs al
+                ON  al.module = 'DEVICE'
+                AND al.action = 'BACKUP'
+                AND TRY_CAST(al.target AS INT) = dr.device_id
+            GROUP BY dr.device_id, dr.bcc, dr.ip_address, dr.comms_key, dr.chain_type
+            ORDER BY last_backup DESC, dr.bcc ASC
+            """
         )
         devices = []
         for row in cur.fetchall():
             ip = row.ip_address.strip() if row.ip_address else ""
+            last_backup = (
+                row.last_backup.strftime("%Y-%m-%d")
+                if row.last_backup else None
+            )
             devices.append({
-                "device_id":  row.device_id,
-                "bcc":        row.bcc,
-                "ip":         ip,
-                "comms_key":  row.comms_key,
-                "chain_type": row.chain_type,
-                "online":     None,   # populated by /devices/status
+                "device_id":   row.device_id,
+                "bcc":         row.bcc,
+                "ip":          ip,
+                "comms_key":   row.comms_key,
+                "chain_type":  row.chain_type,
+                "online":      None,   # populated by /devices/status
+                "last_backup": last_backup,
             })
         cur.close()
         conn.close()
@@ -523,36 +562,45 @@ def api_devices_status():
         return jsonify({"status": "error", "message": str(exc)}), 500
 
 
-# ── GET /api/device/<ip>/backup-summary ───────────────────────────────────────
-@sync_to_new_device_bp.route("/sync/api/device/<ip>/backup-summary", methods=["GET"])
+# ── GET /api/device/<device_id>/backup-summary ────────────────────────────────
+@sync_to_new_device_bp.route("/sync/api/device/<int:device_id>/backup-summary", methods=["GET"])
 @loggedin_required()
-def api_backup_summary(ip: str):
+def api_backup_summary(device_id: int):
     """
     Returns counts of backed-up users, fingerprints, and attendance records
-    stored in SQL Server for the given device IP, plus the last backup timestamp.
+    stored in SQL Server for the given device_id, plus the last backup timestamp.
     Used to populate the source device preview panel.
     """
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
 
+        # Resolve IP from device_registry — backup tables are keyed by device_ip
         cur.execute(
-            "SELECT COUNT(*) FROM dbo.backup_device_users WHERE device_ip = ?", (ip,)
+            "SELECT ip_address FROM dbo.device_registry WHERE device_id = ?", (device_id,)
+        )
+        reg = cur.fetchone()
+        if not reg:
+            return jsonify({"status": "error", "message": f"Device ID {device_id} not found."}), 404
+        device_ip = (reg.ip_address or "").strip()
+
+        cur.execute(
+            "SELECT COUNT(*) FROM dbo.backup_device_users WHERE device_ip = ?", (device_ip,)
         )
         user_count = cur.fetchone()[0]
 
         cur.execute(
-            "SELECT COUNT(*) FROM dbo.backup_fingerprints WHERE device_ip = ?", (ip,)
+            "SELECT COUNT(*) FROM dbo.backup_fingerprints WHERE device_ip = ?", (device_ip,)
         )
         fp_count = cur.fetchone()[0]
 
         cur.execute(
-            "SELECT COUNT(*) FROM dbo.backup_attendance_logs WHERE device_ip = ?", (ip,)
+            "SELECT COUNT(*) FROM dbo.backup_attendance_logs WHERE device_ip = ?", (device_ip,)
         )
         att_count = cur.fetchone()[0]
 
         cur.execute(
-            "SELECT MAX(backup_timestamp) FROM dbo.backup_device_users WHERE device_ip = ?", (ip,)
+            "SELECT MAX(backup_timestamp) FROM dbo.backup_device_users WHERE device_ip = ?", (device_ip,)
         )
         row         = cur.fetchone()
         last_backup = str(row[0]) if row and row[0] else "Never"
@@ -570,17 +618,27 @@ def api_backup_summary(ip: str):
         return jsonify({"status": "error", "message": str(exc)}), 500
 
 
-# ── GET /api/device/<ip>/users ────────────────────────────────────────────────
-@sync_to_new_device_bp.route("/sync/api/device/<ip>/users", methods=["GET"])
+# ── GET /api/device/<device_id>/users ─────────────────────────────────────────
+@sync_to_new_device_bp.route("/sync/api/device/<int:device_id>/users", methods=["GET"])
 @loggedin_required()
-def api_device_users(ip: str):
+def api_device_users(device_id: int):
     """
     Returns the backed-up user list from dbo.backup_device_users for the
-    given device IP.  Used for the source device preview panel (Users tab).
+    given device_id.  Used for the source device preview panel (Users tab).
     """
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
+
+        # Resolve IP from device_registry — backup tables are keyed by device_ip
+        cur.execute(
+            "SELECT ip_address FROM dbo.device_registry WHERE device_id = ?", (device_id,)
+        )
+        reg = cur.fetchone()
+        if not reg:
+            return jsonify({"status": "error", "message": f"Device ID {device_id} not found."}), 404
+        device_ip = (reg.ip_address or "").strip()
+
         cur.execute(
             """
             SELECT employee_code, employee_name, access_number,
@@ -589,7 +647,7 @@ def api_device_users(ip: str):
             WHERE  device_ip = ?
             ORDER  BY employee_code
             """,
-            (ip,),
+            (device_ip,),
         )
         users = []
         for row in cur.fetchall():
@@ -608,19 +666,29 @@ def api_device_users(ip: str):
         return jsonify({"status": "error", "message": str(exc)}), 500
 
 
-# ── GET /api/device/<ip>/attendance ──────────────────────────────────────────
-@sync_to_new_device_bp.route("/sync/api/device/<ip>/attendance", methods=["GET"])
+# ── GET /api/device/<device_id>/attendance ────────────────────────────────────
+@sync_to_new_device_bp.route("/sync/api/device/<int:device_id>/attendance", methods=["GET"])
 @loggedin_required()
-def api_device_attendance(ip: str):
+def api_device_attendance(device_id: int):
     """
     Returns the backed-up attendance count from dbo.backup_attendance_logs
-    for the given device IP.  Shown for reference only — not pushed to target.
+    for the given device_id.  Shown for reference only — not pushed to target.
     """
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
+
+        # Resolve IP from device_registry — backup tables are keyed by device_ip
         cur.execute(
-            "SELECT COUNT(*) FROM dbo.backup_attendance_logs WHERE device_ip = ?", (ip,)
+            "SELECT ip_address FROM dbo.device_registry WHERE device_id = ?", (device_id,)
+        )
+        reg = cur.fetchone()
+        if not reg:
+            return jsonify({"status": "error", "message": f"Device ID {device_id} not found."}), 404
+        device_ip = (reg.ip_address or "").strip()
+
+        cur.execute(
+            "SELECT COUNT(*) FROM dbo.backup_attendance_logs WHERE device_ip = ?", (device_ip,)
         )
         count = cur.fetchone()[0]
         cur.close()
@@ -636,23 +704,41 @@ def api_device_attendance(ip: str):
 def api_sync_start():
     """
     Kick off a background sync task.
-    Body JSON: { source_ip, target_ip }
-    Reads from dbo.backup_device_users / dbo.backup_fingerprints for source_ip
-    and pushes to the target ZK device.
+    Body JSON: { source_device_id, target_ip }
+    Resolves source IP from device_registry; reads backup tables by device_id.
     """
-    data      = request.get_json(silent=True) or {}
-    source_ip = (data.get("source_ip") or "").strip()
-    target_ip = (data.get("target_ip") or "").strip()
-    operator  = session.get("username", "System")
+    data             = request.get_json(silent=True) or {}
+    source_device_id = data.get("source_device_id")
+    target_ip        = (data.get("target_ip") or "").strip()
+    operator         = session.get("username", "System")
 
-    if not source_ip or not target_ip:
-        return jsonify({"status": "error", "message": "source_ip and target_ip are required."}), 400
+    if not source_device_id or not target_ip:
+        return jsonify({"status": "error", "message": "source_device_id and target_ip are required."}), 400
+
+    try:
+        source_device_id = int(source_device_id)
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "source_device_id must be an integer."}), 400
+
+    # Resolve source IP for display and same-device guard
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        cur.execute("SELECT ip_address FROM dbo.device_registry WHERE device_id = ?", (source_device_id,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not row:
+            return jsonify({"status": "error", "message": f"Device ID {source_device_id} not found."}), 404
+        source_ip = (row.ip_address or "").strip()
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 500
 
     if source_ip == target_ip:
         return jsonify({"status": "error", "message": "Source and target devices must be different."}), 400
 
-    task_id = _new_task(source_ip, target_ip, operator)
-    _executor.submit(_run_sync, task_id, source_ip, target_ip, operator)
+    task_id = _new_task(source_device_id, source_ip, target_ip, operator)
+    _executor.submit(_run_sync, task_id, source_device_id, target_ip, operator)
 
     return jsonify({"status": "success", "task_id": task_id})
 
@@ -695,14 +781,15 @@ def api_sync_logs():
         "status": "success",
         "tasks": [
             {
-                "task_id":    t["task_id"],
-                "status":     t["status"],
-                "source_ip":  t["source_ip"],
-                "target_ip":  t["target_ip"],
-                "operator":   t["operator"],
-                "progress":   t["progress"],
-                "started_at": t["started_at"],
-                "summary":    t["summary"],
+                "task_id":          t["task_id"],
+                "status":           t["status"],
+                "source_device_id": t["source_device_id"],
+                "source_ip":        t["source_ip"],
+                "target_ip":        t["target_ip"],
+                "operator":         t["operator"],
+                "progress":         t["progress"],
+                "started_at":       t["started_at"],
+                "summary":          t["summary"],
             }
             for t in recent
         ],
@@ -716,21 +803,42 @@ def api_push_selected():
     """
     Push only the specified employee_codes from the source device backup
     to the target ZK device.
-    Body JSON: { source_ip, target_ip, employee_codes: [...] }
+    Body JSON: { source_device_id, target_ip, employee_codes: [...] }
     """
-    data      = request.get_json(silent=True) or {}
-    source_ip = (data.get("source_ip") or "").strip()
-    target_ip = (data.get("target_ip") or "").strip()
-    codes     = [str(c).strip().upper() for c in (data.get("employee_codes") or []) if c]
-    operator  = session.get("username", "System")
+    data             = request.get_json(silent=True) or {}
+    source_device_id = data.get("source_device_id")
+    target_ip        = (data.get("target_ip") or "").strip()
+    codes            = [str(c).strip().upper() for c in (data.get("employee_codes") or []) if c]
+    operator         = session.get("username", "System")
 
-    if not source_ip or not target_ip:
-        return jsonify({"status": "error", "message": "source_ip and target_ip are required."}), 400
-    if source_ip == target_ip:
-        return jsonify({"status": "error", "message": "Source and target devices must be different."}), 400
+    if not source_device_id or not target_ip:
+        return jsonify({"status": "error", "message": "source_device_id and target_ip are required."}), 400
+
+    try:
+        source_device_id = int(source_device_id)
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "source_device_id must be an integer."}), 400
+
     if not codes:
         return jsonify({"status": "error", "message": "No employee codes provided."}), 400
 
-    task_id = _new_task(source_ip, target_ip, operator)
-    _executor.submit(_run_sync, task_id, source_ip, target_ip, operator, codes)
+    # Resolve source IP for same-device guard
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        cur.execute("SELECT ip_address FROM dbo.device_registry WHERE device_id = ?", (source_device_id,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not row:
+            return jsonify({"status": "error", "message": f"Device ID {source_device_id} not found."}), 404
+        source_ip = (row.ip_address or "").strip()
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 500
+
+    if source_ip == target_ip:
+        return jsonify({"status": "error", "message": "Source and target devices must be different."}), 400
+
+    task_id = _new_task(source_device_id, source_ip, target_ip, operator)
+    _executor.submit(_run_sync, task_id, source_device_id, target_ip, operator, codes)
     return jsonify({"status": "success", "task_id": task_id})

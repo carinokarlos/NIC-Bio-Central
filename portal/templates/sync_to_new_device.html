@@ -607,14 +607,13 @@
             <tr>
               <th>Terminal</th>
               <th>IP Address</th>
-              <th>Status</th>
-              <th>Last Sync</th>
+              <th>Last Updated</th>
             </tr>
           </thead>
           <tbody id="srcBody">
-            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
-            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
-            <tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>
+            <tr class="skeleton-row"><td></td><td></td><td></td></tr>
+            <tr class="skeleton-row"><td></td><td></td><td></td></tr>
+            <tr class="skeleton-row"><td></td><td></td><td></td></tr>
           </tbody>
         </table>
       </div>
@@ -851,8 +850,7 @@
         <thead>
           <tr>
             <th>Task ID</th>
-            <th>Source</th>
-            <th>Target</th>
+            <th>Source</th>            <th>Target</th>
             <th>Operator</th>
             <th>Users</th>
             <th>Fingerprints</th>
@@ -936,8 +934,8 @@ let allDevices     = [];
 let srcPage = 1, tgtPage = 1;
 let srcFiltered = [], tgtFiltered = [];
 
-let selectedSourceIp   = null, selectedSourceName   = null;
-let selectedTargetIp   = null, selectedTargetName   = null;
+let selectedSourceDeviceId = null, selectedSourceIp = null, selectedSourceName = null;
+let selectedTargetDeviceId = null, selectedTargetIp = null, selectedTargetName = null;
 
 let allPreviewUsers  = [], filteredPreviewUsers = [], userPage = 1;
 let selectedUsers = new Set();  // employee_codes chosen for selective push
@@ -954,7 +952,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ── Load Devices ─────────────────────────────────────────────────────────────
 async function loadDevices() {
-  setSkeleton("srcBody", 4);
+  setSkeleton("srcBody", 4, null, 3);
   setSkeleton("tgtBody", 4);
   try {
     const res  = await fetch("/sync/api/devices");
@@ -974,7 +972,7 @@ async function loadDevices() {
     fetchDeviceStatuses();
   } catch (e) {
     showAlert("Failed to load devices: " + e.message, false);
-    setSkeleton("srcBody", 0, "Could not load device list.");
+    setSkeleton("srcBody", 0, "Could not load device list.", 3);
     setSkeleton("tgtBody", 0, "Could not load device list.");
   }
 }
@@ -993,8 +991,7 @@ async function fetchDeviceStatuses() {
       if (d.ip in statuses) d.online = statuses[d.ip];
     });
 
-    // Re-render so badges update
-    renderSourceTable();
+    // Re-render target only (source devices don't show connectivity)
     renderTargetTable();
 
     // Update online count stat
@@ -1015,21 +1012,21 @@ function renderSourceTable() {
 
   const slice = srcFiltered.slice((srcPage - 1) * PAGE_SIZE, srcPage * PAGE_SIZE);
   if (!slice.length) {
-    body.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-server"></i>No devices found.</div></td></tr>`;
+    body.innerHTML = `<tr><td colspan="3"><div class="empty-state"><i class="fas fa-server"></i>No devices found.</div></td></tr>`;
   } else {
     slice.forEach(d => {
       const tr  = document.createElement("tr");
-      const isSelected = d.ip === selectedSourceIp;
+      const isSelected = d.device_id === selectedSourceDeviceId;
       if (isSelected) tr.classList.add("selected-row");
-      const offlineSrc = d.online === false;
-      if (offlineSrc) tr.style.cssText = "opacity:.45;pointer-events:none;cursor:not-allowed";
       tr.innerHTML = `
         <td><strong>${d.bcc}</strong></td>
         <td><code style="font-size:.79rem;color:var(--text-secondary)">${d.ip}</code></td>
-        <td>${statusBadge(d.online)}</td>
-        <td><span style="font-size:.77rem;color:var(--text-muted)">${offlineSrc ? "Offline" : "—"}</span></td>
+        <td>${d.last_backup
+          ? `<span style="font-size:.77rem;color:var(--text-secondary)">${d.last_backup}</span>`
+          : `<span style="font-size:.74rem;color:var(--text-muted);font-style:italic">No Backup Available</span>`
+        }</td>
       `;
-      if (!offlineSrc) tr.addEventListener("click", () => selectSource(d.ip, d.bcc, tr));
+      tr.addEventListener("click", () => selectSource(d.device_id, d.ip, d.bcc, tr));
       body.appendChild(tr);
     });
   }
@@ -1052,8 +1049,8 @@ function renderTargetTable() {
   } else {
     slice.forEach(d => {
       const tr  = document.createElement("tr");
-      const isSelected = d.ip === selectedTargetIp;
-      const isSource   = d.ip === selectedSourceIp;
+      const isSelected = d.device_id === selectedTargetDeviceId;
+      const isSource   = d.device_id === selectedSourceDeviceId;
       if (isSelected) tr.classList.add("selected-row");
 
       tr.innerHTML = `
@@ -1066,7 +1063,7 @@ function renderTargetTable() {
             : d.online === false
               ? `<button class="btn btn-sm btn-ghost" disabled style="padding:4px 10px;opacity:.4;cursor:not-allowed">Select</button>`
               : `<button class="btn btn-sm ${isSelected ? 'btn-success' : 'btn-ghost'}"
-                  onclick="selectTarget('${d.ip}','${d.bcc}',this)" style="padding:4px 10px">
+                  onclick="selectTarget(${d.device_id},'${d.ip}','${d.bcc}',this)" style="padding:4px 10px">
                   ${isSelected ? '<i class="fas fa-check"></i> Selected' : 'Select'}
                 </button>`
           }
@@ -1090,10 +1087,11 @@ function statusBadge(online) {
 }
 
 // ── Source Selection ──────────────────────────────────────────────────────────
-async function selectSource(ip, name, tr) {
-  if (selectedSourceIp === ip) return;
-  selectedSourceIp   = ip;
-  selectedSourceName = name;
+async function selectSource(deviceId, ip, name, tr) {
+  if (selectedSourceDeviceId === deviceId) return;
+  selectedSourceDeviceId = deviceId;
+  selectedSourceIp       = ip;
+  selectedSourceName     = name;
 
   document.getElementById("srcName").textContent      = name;
   document.getElementById("srcIpDisplay").textContent = ip;
@@ -1109,13 +1107,13 @@ async function selectSource(ip, name, tr) {
     `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Loading backup data…</div></td></tr>`;
 
   renderSourceTable();
-  renderTargetTable();     // disable "Is Source" row in target
+  renderTargetTable();     // re-evaluate "Is Source" guard in target
   updateSyncBar();
   setStep(2);
 
-  // Fetch backup summary (users + fingerprints + attendance counts + last backup)
+  // Fetch backup summary keyed by device_id
   try {
-    const sr   = await fetch(`/sync/api/device/${ip}/backup-summary`);
+    const sr   = await fetch(`/sync/api/device/${deviceId}/backup-summary`);
     const sdat = await sr.json();
     if (sdat.status === "success") {
       document.getElementById("prevUserCount").textContent   = sdat.user_count.toLocaleString();
@@ -1126,9 +1124,9 @@ async function selectSource(ip, name, tr) {
     }
   } catch (_) {}
 
-  // Fetch user list for preview table
+  // Fetch user list for preview table, keyed by device_id
   try {
-    const res  = await fetch(`/sync/api/device/${ip}/users`);
+    const res  = await fetch(`/sync/api/device/${deviceId}/users`);
     const data = await res.json();
     if (data.status !== "success") throw new Error(data.message);
 
@@ -1137,8 +1135,16 @@ async function selectSource(ip, name, tr) {
     selectedUsers.clear();
     updatePushSelectedBtn();
     userPage = 1;
-    renderUserPreviewTable();
-    document.getElementById("userPagRow").style.display = "flex";
+
+    if (!allPreviewUsers.length) {
+      showToast("No user data found for this device/IP address.", "warn");
+      document.getElementById("previewUserBody").innerHTML =
+        `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-user-slash"></i>No users found for this device.</div></td></tr>`;
+      document.getElementById("userPagRow").style.display = "none";
+    } else {
+      renderUserPreviewTable();
+      document.getElementById("userPagRow").style.display = "flex";
+    }
   } catch (e) {
     document.getElementById("previewUserBody").innerHTML =
       `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Could not load users: ${e.message}</div></td></tr>`;
@@ -1146,7 +1152,7 @@ async function selectSource(ip, name, tr) {
 }
 
 function clearSource() {
-  selectedSourceIp = null; selectedSourceName = null;
+  selectedSourceDeviceId = null; selectedSourceIp = null; selectedSourceName = null;
   document.getElementById("srcStrip").classList.remove("visible");
   document.getElementById("previewPanel").style.display = "none";
   document.getElementById("statUsers").textContent = "—";
@@ -1158,10 +1164,11 @@ function clearSource() {
 }
 
 // ── Target Selection ──────────────────────────────────────────────────────────
-function selectTarget(ip, name, btn) {
-  if (ip === selectedSourceIp) { showAlert("Source and target must be different.", false); return; }
-  selectedTargetIp   = ip;
-  selectedTargetName = name;
+function selectTarget(deviceId, ip, name, btn) {
+  if (deviceId === selectedSourceDeviceId) { showAlert("Source and target must be different.", false); return; }
+  selectedTargetDeviceId = deviceId;
+  selectedTargetIp       = ip;
+  selectedTargetName     = name;
 
   document.getElementById("tgtName").textContent      = name;
   document.getElementById("tgtIpDisplay").textContent = ip;
@@ -1175,7 +1182,7 @@ function selectTarget(ip, name, btn) {
 }
 
 function clearTarget() {
-  selectedTargetIp = null; selectedTargetName = null;
+  selectedTargetDeviceId = null; selectedTargetIp = null; selectedTargetName = null;
   document.getElementById("tgtStrip").classList.remove("visible");
   document.getElementById("targetCountPill").style.display = "none";
   renderTargetTable();
@@ -1188,12 +1195,12 @@ function updateSyncBar() {
   const btn  = document.getElementById("startSyncBtn");
   const line = document.getElementById("syncSummaryLine");
 
-  if (selectedSourceIp && selectedTargetIp) {
+  if (selectedSourceDeviceId && selectedTargetDeviceId) {
     // Only enable Start Sync if no users are individually selected
     btn.disabled = selectedUsers.size > 0;
     line.textContent = `${selectedSourceName} (${selectedSourceIp})  →  ${selectedTargetName} (${selectedTargetIp})`;
     setStep(3);
-  } else if (selectedSourceIp) {
+  } else if (selectedSourceDeviceId) {
     btn.disabled = true;
     line.textContent = `Source: ${selectedSourceName}. Now select a target device.`;
   } else {
@@ -1284,20 +1291,20 @@ function updatePushSelectedBtn() {
   if (count > 0) {
     // Selective mode: show Push Selected, disable full Start Sync
     btn.style.display = "inline-flex";
-    btn.disabled      = !selectedTargetIp;
+    btn.disabled      = !selectedTargetDeviceId;
     syncBtn.disabled  = true;
     syncBtn.title     = "Deselect users to enable full sync";
   } else {
     // Full sync mode
     btn.style.display = "none";
     btn.disabled      = true;
-    syncBtn.disabled  = !(selectedSourceIp && selectedTargetIp);
+    syncBtn.disabled  = !(selectedSourceDeviceId && selectedTargetDeviceId);
     syncBtn.title     = "";
   }
 }
 
 function openPushSelectedModal() {
-  if (!selectedTargetIp || selectedUsers.size === 0) return;
+  if (!selectedTargetDeviceId || selectedUsers.size === 0) return;
   document.getElementById("modalSelectedCount").textContent = selectedUsers.size;
   document.getElementById("modalPushSrc").textContent = `${selectedSourceName} (${selectedSourceIp})`;
   document.getElementById("modalPushTgt").textContent = `${selectedTargetName} (${selectedTargetIp})`;
@@ -1306,7 +1313,7 @@ function openPushSelectedModal() {
 
 async function startPushSelected() {
   closeModal("pushSelectedModal");
-  if (!selectedSourceIp || !selectedTargetIp || selectedUsers.size === 0) return;
+  if (!selectedSourceDeviceId || !selectedTargetDeviceId || selectedUsers.size === 0) return;
 
   const btn = document.getElementById("pushSelectedBtn");
   btn.disabled = true;
@@ -1329,9 +1336,9 @@ async function startPushSelected() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        source_ip:      selectedSourceIp,
-        target_ip:      selectedTargetIp,
-        employee_codes: [...selectedUsers],
+        source_device_id: selectedSourceDeviceId,
+        target_ip:        selectedTargetIp,
+        employee_codes:   [...selectedUsers],
       }),
     });
     const data = await res.json();
@@ -1389,7 +1396,7 @@ function changeTgtPage(d) { tgtPage += d; renderTargetTable(); }
 
 // ── Confirm Modal ─────────────────────────────────────────────────────────────
 function openConfirmModal() {
-  if (!selectedSourceIp || !selectedTargetIp) return;
+  if (!selectedSourceDeviceId || !selectedTargetDeviceId) return;
   document.getElementById("modalSrc").textContent = `${selectedSourceName} (${selectedSourceIp})`;
   document.getElementById("modalTgt").textContent = `${selectedTargetName} (${selectedTargetIp})`;
   document.getElementById("confirmModal").classList.add("open");
@@ -1399,7 +1406,7 @@ function closeModal(id) { document.getElementById(id).classList.remove("open"); 
 // ── Start Sync ────────────────────────────────────────────────────────────────
 async function startSync() {
   closeModal("confirmModal");
-  if (!selectedSourceIp || !selectedTargetIp) return;
+  if (!selectedSourceDeviceId || !selectedTargetDeviceId) return;
 
   const btn = document.getElementById("startSyncBtn");
   btn.disabled = true;
@@ -1422,7 +1429,7 @@ async function startSync() {
     const res  = await fetch("/sync/api/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source_ip: selectedSourceIp, target_ip: selectedTargetIp }),
+      body: JSON.stringify({ source_device_id: selectedSourceDeviceId, target_ip: selectedTargetIp }),
     });
     const data = await res.json();
     if (data.status !== "success") throw new Error(data.message);
@@ -1541,7 +1548,7 @@ async function loadHistory() {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><code style="font-size:.72rem;color:var(--text-muted)">${t.task_id.slice(0,8)}…</code></td>
-        <td><code style="font-size:.78rem">${t.source_ip}</code></td>
+        <td><code style="font-size:.78rem">#${t.source_device_id} ${t.source_ip ? '(' + t.source_ip + ')' : ''}</code></td>
         <td><code style="font-size:.78rem">${t.target_ip}</code></td>
         <td>${t.operator}</td>
         <td>${s.users_pushed || 0}</td>
@@ -1578,16 +1585,46 @@ function showAlert(msg, success) {
   setTimeout(() => bar.classList.remove("visible"), 8000);
 }
 
+// ── Toast Notification ────────────────────────────────────────────────────────
+function showToast(msg, type = "info") {
+  let toast = document.getElementById("_toastEl");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "_toastEl";
+    toast.style.cssText = `
+      position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(20px);
+      background:#1e293b; color:#f1f5f9; padding:.65rem 1.1rem;
+      border-radius:10px; font-size:.83rem; font-weight:500;
+      display:flex; align-items:center; gap:.55rem;
+      box-shadow:0 4px 20px rgba(0,0,0,.35);
+      z-index:9999; opacity:0; pointer-events:none;
+      transition:opacity .25s, transform .25s;
+      white-space:nowrap; max-width:90vw;
+    `;
+    document.body.appendChild(toast);
+  }
+  const icons = { info: "fa-info-circle", warn: "fa-exclamation-triangle", error: "fa-times-circle", success: "fa-check-circle" };
+  const colors = { info: "#94a3b8", warn: "#fbbf24", error: "#f87171", success: "#4ade80" };
+  toast.innerHTML = `<i class="fas ${icons[type] || icons.info}" style="color:${colors[type] || colors.info}"></i>${msg}`;
+  toast.style.opacity = "1";
+  toast.style.transform = "translateX(-50%) translateY(0)";
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(-50%) translateY(20px)";
+  }, 4000);
+}
+
 // ── Skeleton Rows ─────────────────────────────────────────────────────────────
-function setSkeleton(id, count, emptyMsg) {
+function setSkeleton(id, count, emptyMsg, cols = 4) {
   const body = document.getElementById(id);
   if (!body) return;
   if (count === 0 && emptyMsg) {
-    body.innerHTML = `<tr><td colspan="4"><div class="empty-state">${emptyMsg}</div></td></tr>`;
+    body.innerHTML = `<tr><td colspan="${cols}"><div class="empty-state">${emptyMsg}</div></td></tr>`;
     return;
   }
   body.innerHTML = Array(count).fill("")
-    .map(() => `<tr class="skeleton-row"><td></td><td></td><td></td><td></td></tr>`)
+    .map(() => `<tr class="skeleton-row">${Array(cols).fill("<td></td>").join("")}</tr>`)
     .join("");
 }
 
@@ -1601,6 +1638,7 @@ function ts() {
 function resetAll() {
   selectedUsers.clear();
   updatePushSelectedBtn();
+  selectedSourceDeviceId = null; selectedTargetDeviceId = null;
   clearSource();
   clearTarget();
   document.getElementById("progressSection").classList.remove("visible");
