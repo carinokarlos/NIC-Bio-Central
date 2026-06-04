@@ -709,18 +709,23 @@ def api_sync_start():
     """
     data             = request.get_json(silent=True) or {}
     source_device_id = data.get("source_device_id")
+    target_device_id = data.get("target_device_id")
     target_ip        = (data.get("target_ip") or "").strip()
     operator         = session.get("username", "System")
 
-    if not source_device_id or not target_ip:
-        return jsonify({"status": "error", "message": "source_device_id and target_ip are required."}), 400
+    if not source_device_id or not target_device_id or not target_ip:
+        return jsonify({"status": "error", "message": "source_device_id, target_device_id and target_ip are required."}), 400
 
     try:
         source_device_id = int(source_device_id)
+        target_device_id = int(target_device_id)
     except (TypeError, ValueError):
-        return jsonify({"status": "error", "message": "source_device_id must be an integer."}), 400
+        return jsonify({"status": "error", "message": "device IDs must be integers."}), 400
 
-    # Resolve source IP for display and same-device guard
+    if source_device_id == target_device_id:
+        return jsonify({"status": "error", "message": "Source and target devices must be different."}), 400
+
+    # Resolve source IP for display
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
@@ -733,9 +738,6 @@ def api_sync_start():
         source_ip = (row.ip_address or "").strip()
     except Exception as exc:
         return jsonify({"status": "error", "message": str(exc)}), 500
-
-    if source_ip == target_ip:
-        return jsonify({"status": "error", "message": "Source and target devices must be different."}), 400
 
     task_id = _new_task(source_device_id, source_ip, target_ip, operator)
     _executor.submit(_run_sync, task_id, source_device_id, target_ip, operator)
@@ -803,26 +805,31 @@ def api_push_selected():
     """
     Push only the specified employee_codes from the source device backup
     to the target ZK device.
-    Body JSON: { source_device_id, target_ip, employee_codes: [...] }
+    Body JSON: { source_device_id, target_device_id, target_ip, employee_codes: [...] }
     """
     data             = request.get_json(silent=True) or {}
     source_device_id = data.get("source_device_id")
+    target_device_id = data.get("target_device_id")
     target_ip        = (data.get("target_ip") or "").strip()
     codes            = [str(c).strip().upper() for c in (data.get("employee_codes") or []) if c]
     operator         = session.get("username", "System")
 
-    if not source_device_id or not target_ip:
-        return jsonify({"status": "error", "message": "source_device_id and target_ip are required."}), 400
+    if not source_device_id or not target_device_id or not target_ip:
+        return jsonify({"status": "error", "message": "source_device_id, target_device_id and target_ip are required."}), 400
 
     try:
         source_device_id = int(source_device_id)
+        target_device_id = int(target_device_id)
     except (TypeError, ValueError):
-        return jsonify({"status": "error", "message": "source_device_id must be an integer."}), 400
+        return jsonify({"status": "error", "message": "device IDs must be integers."}), 400
 
     if not codes:
         return jsonify({"status": "error", "message": "No employee codes provided."}), 400
 
-    # Resolve source IP for same-device guard
+    if source_device_id == target_device_id:
+        return jsonify({"status": "error", "message": "Source and target devices must be different."}), 400
+
+    # Resolve source IP for display
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
@@ -835,9 +842,6 @@ def api_push_selected():
         source_ip = (row.ip_address or "").strip()
     except Exception as exc:
         return jsonify({"status": "error", "message": str(exc)}), 500
-
-    if source_ip == target_ip:
-        return jsonify({"status": "error", "message": "Source and target devices must be different."}), 400
 
     task_id = _new_task(source_device_id, source_ip, target_ip, operator)
     _executor.submit(_run_sync, task_id, source_device_id, target_ip, operator, codes)

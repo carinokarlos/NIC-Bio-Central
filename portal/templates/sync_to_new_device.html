@@ -1337,6 +1337,7 @@ async function startPushSelected() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         source_device_id: selectedSourceDeviceId,
+        target_device_id: selectedTargetDeviceId,
         target_ip:        selectedTargetIp,
         employee_codes:   [...selectedUsers],
       }),
@@ -1429,7 +1430,7 @@ async function startSync() {
     const res  = await fetch("/sync/api/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source_device_id: selectedSourceDeviceId, target_ip: selectedTargetIp }),
+      body: JSON.stringify({ source_device_id: selectedSourceDeviceId, target_device_id: selectedTargetDeviceId, target_ip: selectedTargetIp }),
     });
     const data = await res.json();
     if (data.status !== "success") throw new Error(data.message);
