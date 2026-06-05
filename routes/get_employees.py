@@ -216,27 +216,36 @@ def purge_logs():
     try:
         device_id = request.form.get('device_id')
         password = request.form.get('password')
+        current_user = session.get('username', 'System')
 
         if password != "123123":
             return jsonify({"status": "error", "message": "Unauthorized: Invalid PIN."})
 
         conn_db = get_db_connection()
         cursor = conn_db.cursor()
-        cursor.execute("SELECT ip_address, comms_key FROM dbo.device_registry WHERE device_id = ?", (device_id,))
+        cursor.execute("SELECT bcc, ip_address, comms_key FROM dbo.device_registry WHERE device_id = ?", (device_id,))
         device_row = cursor.fetchone()
-        conn_db.close()
 
         if not device_row:
+            conn_db.close()
             return jsonify({"status": "error", "message": "Device not found in SQL registry."})
 
         ip = device_row.ip_address.strip()
         key = int(device_row.comms_key) if device_row.comms_key.isdigit() else 0
+        bcc = device_row.bcc
 
         zk = ZK(ip, port=4370, timeout=15, password=key, force_udp=False, ommit_ping=False)
         conn_zk = None
         try:
             conn_zk = zk.connect()
-            conn_zk.clear_attendance() 
+            conn_zk.clear_attendance()
+
+            cursor.execute("""
+                INSERT INTO dbo.biocentral_audit_logs (module, target, action, action_details, action_by, action_at)
+                VALUES ('DEVICE', ?, 'PURGE', ?, ?, GETDATE())
+            """, (str(device_id), f"Purged attendance logs on terminal {bcc} ({ip})", current_user))
+            conn_db.commit()
+
             return jsonify({"status": "success", "message": "Device storage cleared successfully."})
         except Exception as e:
             return jsonify({"status": "error", "message": f"Hardware Connection Error: {str(e)}"})
@@ -244,3 +253,5 @@ def purge_logs():
             if conn_zk: conn_zk.disconnect()
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
+    finally:
+        if 'conn_db' in locals(): conn_db.close()
