@@ -698,6 +698,68 @@ def api_device_attendance(device_id: int):
         return jsonify({"status": "error", "message": str(exc)}), 500
 
 
+# ── GET /api/device/<device_id>/target-check ─────────────────────────────────
+@sync_to_new_device_bp.route("/sync/api/device/<int:device_id>/target-check", methods=["GET"])
+@loggedin_required()
+def api_target_check(device_id: int):
+    """
+    Connects live to the target ZK device and returns how many users are
+    already enrolled on it.  Called by the frontend when the user selects a
+    target device — if the count is > 0 a confirmation warning is shown.
+
+    Response (success):
+        { "status": "success", "user_count": <int> }
+    Response (error — treated as 0 by the frontend so selection can proceed):
+        { "status": "error",   "message": "...", "user_count": 0 }
+    """
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        cur.execute(
+            "SELECT ip_address FROM dbo.device_registry WHERE device_id = ?", (device_id,)
+        )
+        reg = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not reg:
+            return jsonify({"status": "error", "message": f"Device ID {device_id} not found.", "user_count": 0}), 404
+
+        target_ip = (reg.ip_address or "").strip()
+
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc), "user_count": 0}), 500
+
+    # Quick TCP ping before committing to a full ZK handshake
+    reachable, _ = _ping(target_ip)
+    if not reachable:
+        return jsonify({
+            "status":     "error",
+            "message":    f"Device at {target_ip} is not reachable.",
+            "user_count": 0,
+        }), 200  # 200 so frontend degrades gracefully
+
+    try:
+        zk_conn = _zk_connect(target_ip, retries=2)
+        zk_conn.disable_device()
+        try:
+            users = zk_conn.get_users()
+            user_count = len(users) if users else 0
+        finally:
+            zk_conn.enable_device()
+            zk_conn.disconnect()
+
+        return jsonify({"status": "success", "user_count": user_count})
+
+    except Exception as exc:
+        logger.warning("target-check failed for device %s (%s): %s", device_id, target_ip, exc)
+        return jsonify({
+            "status":     "error",
+            "message":    str(exc),
+            "user_count": 0,
+        }), 200  # 200 so frontend degrades gracefully
+
+
 # ── POST /api/sync/start ──────────────────────────────────────────────────────
 @sync_to_new_device_bp.route("/sync/api/start", methods=["POST"])
 @loggedin_required()

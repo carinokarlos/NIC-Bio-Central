@@ -506,6 +506,70 @@
     animation: shimmer 1.5s linear infinite;
     border-radius: 4px; height: 14px; border-bottom: 6px solid #fff;
   }
+
+  /* ── Target Validation Warning Modal ── */
+  .warning-modal-box {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: 0 24px 80px rgba(220,38,38,.25), 0 4px 16px rgba(0,0,0,.15);
+    border: 2px solid #ef4444;
+    padding: 0; width: 500px; max-width: 95vw;
+    animation: popIn .35s cubic-bezier(.16,1,.3,1) forwards;
+    overflow: hidden;
+  }
+  .warning-modal-header {
+    background: #ef4444;
+    padding: 1.5rem 1.75rem;
+    display: flex; align-items: flex-start; gap: 1rem;
+  }
+  .warning-modal-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .warning-modal-icon i { font-size: 1.4rem; color: #fff; }
+  .warning-modal-title  { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0 0 3px; }
+  .warning-modal-sub    { font-size: .82rem; color: rgba(255,255,255,.9); margin: 0; line-height: 1.5; }
+  .warning-modal-body   { padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 1rem; }
+  .warning-info-grid {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    display: flex; flex-direction: column; gap: .55rem;
+  }
+  .warning-info-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: .85rem;
+  }
+  .warning-info-row .wir-label { color: var(--text-secondary); display: flex; align-items: center; gap: 7px; }
+  .warning-info-row .wir-label i { font-size: .82rem; color: #ef4444; }
+  .warning-info-row .wir-val   { font-weight: 700; color: var(--text-primary); }
+  .warning-info-row .wir-val.danger { color: #ef4444; font-size: 1.1rem; }
+  .warning-note {
+    background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
+    padding: .75rem 1rem; font-size: .82rem; color: #dc2626;
+    display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
+  }
+  .warning-note i { flex-shrink: 0; margin-top: 1px; }
+  .warning-modal-footer {
+    padding: 1rem 1.75rem 1.5rem;
+    display: flex; gap: .75rem; justify-content: flex-end;
+    border-top: 2px solid #fca5a5;
+    background: #fef2f2;
+  }
+  .btn-warning {
+    background: #ef4444;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(239,68,68,.4);
+  }
+  .btn-warning:hover:not(:disabled) { background: #dc2626; box-shadow: 0 4px 16px rgba(239,68,68,.5); }
+
+  /* Checking overlay on target select button */
+  .btn-checking {
+    background: var(--bg-muted); color: var(--text-secondary);
+    border: 1px solid var(--border); cursor: not-allowed;
+  }
 </style>
 
 <div class="sync-wrapper">
@@ -897,6 +961,52 @@
 
 </div><!-- /sync-wrapper -->
 
+<!-- ── Target Device Data Warning Modal ──────────────────────────────────── -->
+<div class="modal-overlay" id="targetWarningModal">
+  <div class="warning-modal-box">
+    <div class="warning-modal-header">
+      <div class="warning-modal-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div>
+        <h3 class="warning-modal-title">Warning: Target Device Contains Existing Data</h3>
+        <p class="warning-modal-sub">The selected target device already has existing user records. Importing data may result in duplicate or incorrect records if the wrong device was selected.</p>
+      </div>
+    </div>
+
+    <div class="warning-modal-body">
+      <div class="warning-info-grid">
+        <div class="warning-info-row">
+          <span class="wir-label"><i class="fas fa-desktop"></i> Target Device</span>
+          <span class="wir-val" id="warnTargetName">—</span>
+        </div>
+        <div class="warning-info-row">
+          <span class="wir-label"><i class="fas fa-network-wired"></i> IP Address</span>
+          <span class="wir-val" id="warnTargetIp">—</span>
+        </div>
+        <div class="warning-info-row" style="border-top:1px solid #fed7aa;padding-top:.55rem;margin-top:.1rem">
+          <span class="wir-label"><i class="fas fa-users"></i> Existing Users</span>
+          <span class="wir-val danger" id="warnExistingCount">—</span>
+        </div>
+      </div>
+
+      <div class="warning-note">
+        <i class="fas fa-info-circle"></i>
+        <span>Please verify this is the correct target device before continuing. Proceeding will push source data on top of existing records — users with matching IDs will be skipped, but this action cannot be undone.</span>
+      </div>
+    </div>
+
+    <div class="warning-modal-footer">
+      <button class="btn btn-ghost" onclick="cancelTargetSelection()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="btn btn-warning" onclick="confirmTargetSelection()">
+        <i class="fas fa-arrow-right"></i> Continue Import
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Confirm Modal ──────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-box">
@@ -1164,8 +1274,64 @@ function clearSource() {
 }
 
 // ── Target Selection ──────────────────────────────────────────────────────────
-function selectTarget(deviceId, ip, name, btn) {
+// Holds the pending target data while the warning modal is open
+let _pendingTarget = null;
+
+async function selectTarget(deviceId, ip, name, btn) {
   if (deviceId === selectedSourceDeviceId) { showAlert("Source and target must be different.", false); return; }
+
+  // Show a transient "Checking…" state on the button while we query
+  const origHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled  = true;
+    btn.className = "btn btn-sm btn-checking";
+    btn.innerHTML = `<div class="spinner spinner-dark" style="width:12px;height:12px;border-top-color:var(--accent)"></div> Checking…`;
+  }
+
+  let existingUserCount = 0;
+  try {
+    const res  = await fetch(`/sync/api/device/${deviceId}/target-check`);
+    const data = await res.json();
+    if (data.status === "success") existingUserCount = data.user_count || 0;
+  } catch (_) {
+    // Non-fatal — if the check fails, treat as empty and allow proceeding
+    existingUserCount = 0;
+  } finally {
+    // Restore button
+    if (btn) {
+      btn.disabled  = false;
+      btn.className = `btn btn-sm ${selectedTargetDeviceId === deviceId ? "btn-success" : "btn-ghost"}`;
+      btn.innerHTML = origHtml;
+    }
+  }
+
+  if (existingUserCount > 0) {
+    // Stash the pending selection and show the warning modal
+    _pendingTarget = { deviceId, ip, name };
+    document.getElementById("warnTargetName").textContent    = name;
+    document.getElementById("warnTargetIp").textContent      = ip;
+    document.getElementById("warnExistingCount").textContent = existingUserCount.toLocaleString() + " user(s)";
+    document.getElementById("targetWarningModal").classList.add("open");
+  } else {
+    // No existing data — proceed directly
+    applyTargetSelection(deviceId, ip, name);
+  }
+}
+
+function cancelTargetSelection() {
+  _pendingTarget = null;
+  document.getElementById("targetWarningModal").classList.remove("open");
+}
+
+function confirmTargetSelection() {
+  document.getElementById("targetWarningModal").classList.remove("open");
+  if (!_pendingTarget) return;
+  const { deviceId, ip, name } = _pendingTarget;
+  _pendingTarget = null;
+  applyTargetSelection(deviceId, ip, name);
+}
+
+function applyTargetSelection(deviceId, ip, name) {
   selectedTargetDeviceId = deviceId;
   selectedTargetIp       = ip;
   selectedTargetName     = name;
