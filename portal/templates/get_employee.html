@@ -726,12 +726,12 @@
 
             <div style="text-align: left; margin-bottom: 2rem;">
                 <label for="purge-pin"
-                    style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Administrator
-                    PIN</label>
+                    style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Your
+                    Password</label>
                 <div style="position: relative;">
                     <i data-lucide="lock"
                         style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; width: 16px; height: 16px;"></i>
-                    <input type="password" id="purge-pin" class="search-input" placeholder="Enter PIN to confirm"
+                    <input type="password" id="purge-pin" class="search-input" placeholder="Enter your account password"
                         style="width: 100%; padding: 10px 12px 10px 36px; text-align: left; font-size: 1rem; box-sizing: border-box;"
                         autocomplete="off">
                 </div>
@@ -1291,8 +1291,8 @@
         const pin = document.getElementById('purge-pin').value;
         const confirmBtn = document.getElementById('purge-confirm-btn');
 
-        if (pin !== "Zr!7Kp$2Vx@9LmQ#") {
-            showAlertModal("Authentication Failed", "Incorrect Administrator PIN.", "error");
+        if (!pin) {
+            showAlertModal("Authentication Failed", "Please enter your account password.", "error");
             return;
         }
 

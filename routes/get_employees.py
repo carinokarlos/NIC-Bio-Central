@@ -1,6 +1,7 @@
 import csv
 import io
 import pyodbc
+import ldap
 from collections import defaultdict
 from flask import Blueprint, render_template, request, jsonify, session, Response
 from portal import app, loggedin_required
@@ -218,8 +219,19 @@ def purge_logs():
         password = request.form.get('password')
         current_user = session.get('username', 'System')
 
-        if password != "123123":
-            return jsonify({"status": "error", "message": "Unauthorized: Invalid PIN."})
+        # Re-authenticate the current session user against Active Directory
+        ldap_url = app.config.get('LDAP_PROVIDER_URL', 'ldap://MGSVR01.mgroup.local/')
+        bind_dn = f"MGROUP\\{current_user}"
+        try:
+            conn_ldap = ldap.initialize(ldap_url)
+            conn_ldap.protocol_version = ldap.VERSION3
+            conn_ldap.set_option(ldap.OPT_REFERRALS, 0)
+            conn_ldap.simple_bind_s(bind_dn, password)
+            conn_ldap.unbind_s()
+        except ldap.INVALID_CREDENTIALS:
+            return jsonify({"status": "error", "message": "Unauthorized: Invalid credentials."})
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"Authentication error: {str(e)}"})
 
         conn_db = get_db_connection()
         cursor = conn_db.cursor()
