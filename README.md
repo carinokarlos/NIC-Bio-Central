@@ -34,4 +34,4 @@ Built on **Flask**, the application uses a "Fail-Fast" TCP validation strategy c
 This repository contains critical infrastructure code. The web application is strictly gated via Active Directory. Only users belonging to the designated `App_Biometric_Admins` security group may access the enrollment endpoints. The application interacts with corporate Master Data using the Principle of Least Privilege (Read-Only service accounts).
 
 ---
-*Developed and maintained by the MIS Department Interns Carl Cabral & Carlos Cariño - Newtrends International Corporation.* testing
+*Developed and maintained by the MIS Department Interns Carl Cabral & Carlos Cariño - Newtrends International Corporation.* 123 test
