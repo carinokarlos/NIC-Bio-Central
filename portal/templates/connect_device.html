@@ -1,0 +1,1524 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
+<style>
+    /* --- Audit Logs Shared Variables --- */
+    :root {
+        --bg-page: #f3f4f6;
+        --bg-surface: #ffffff;
+        --bg-muted: #f9fafb;
+        --bg-hover: #f3f4f6;
+        --border: #e5e7eb;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --text-muted: #9ca3af;
+        --blue-bg: #eff6ff;
+        --blue-text: #1d4ed8;
+        --green-bg: #f0fdf4;
+        --green-text: #15803d;
+        --red-bg: #fef2f2;
+        --red-text: #b91c1c;
+        --yellow-bg: #fffbeb;
+        --yellow-text: #b45309;
+        --eggshell: #f0ead6;
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --bento-radius: 20px;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* --- Light Bento Grid Theme --- */
+    .bento-layout {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto 2rem auto;
+    }
+
+    .bento-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--bento-radius);
+        box-shadow: var(--shadow-sm);
+        padding: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bento-panel:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    .span-full {
+        grid-column: 1 / -1;
+    }
+
+    /* --- Pop-In Animation --- */
+    @keyframes popIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .pop-in-container {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .stagger-1 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.1s;
+        opacity: 0;
+    }
+
+    .stagger-2 {
+        animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
+
+    /* --- Inline Alerts --- */
+    .alert-box {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        animation: popIn 0.3s ease forwards;
+    }
+
+    .alert-error {
+        background: var(--red-bg);
+        color: var(--red-text);
+        border: 1px solid #fecaca;
+    }
+
+    .alert-success {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border: 1px solid #bbf7d0;
+    }
+
+    /* --- Manager Layout --- */
+    .manager-wrapper {
+        flex: 1;
+        width: 100%;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .welcome-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .welcome-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    /* --- Toolbar (Search & Buttons) --- */
+    .search-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        width: 16px;
+        height: 16px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 8px 12px 8px 34px;
+        font-size: 0.875rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .search-input:focus {
+        border-color: var(--blue-text);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
+    /* --- Buttons --- */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        transition: background .15s;
+    }
+
+    .btn:hover:not(:disabled) {
+        background: var(--bg-muted);
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-primary {
+        background: var(--text-primary);
+        color: var(--bg-surface);
+        border-color: transparent;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: #1f2937;
+    }
+
+    .btn-add {
+        background: var(--eggshell);
+        color: #374151;
+        border-color: #d1c8b3;
+        box-shadow: var(--shadow-sm);
+        font-weight: 600;
+    }
+
+    .btn-add:hover {
+        background: #e3ddc8;
+    }
+
+    /* --- Table Card --- */
+    .table-container {
+        width: 100%;
+        max-width: 1200px;
+    }
+
+    .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .audit-table thead th {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 12px 16px;
+        text-align: left;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+    }
+
+    .audit-table thead th:hover {
+        background: var(--bg-muted);
+        color: var(--text-primary);
+    }
+
+    .th-content {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .sort-icon {
+        width: 14px;
+        height: 14px;
+        opacity: 0.3;
+    }
+
+    .sort-active {
+        opacity: 1;
+        color: var(--blue-text);
+    }
+
+    /* Zebra Striping */
+    .audit-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background .1s;
+    }
+
+    .audit-table tbody tr:nth-child(even) {
+        background-color: var(--bg-muted);
+    }
+
+    .audit-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .audit-table tbody tr:hover td {
+        background: #f3f4f6;
+    }
+
+    .audit-table tbody td {
+        padding: 12px 16px;
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    /* --- Pagination Wrapper --- */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-surface);
+    }
+
+    .page-info {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* --- Typography & Badges --- */
+    .device-name {
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+    }
+
+    .device-ip {
+        font-family: ui-monospace, monospace;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+
+    .badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .badge-rustans {
+        background: var(--yellow-bg);
+        color: var(--yellow-text);
+    }
+
+    .badge-rustans .badge-dot {
+        background: var(--yellow-text);
+    }
+
+    .badge-rds {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+    }
+
+    .badge-rds .badge-dot {
+        background: var(--blue-text);
+    }
+
+    .badge-neutral {
+        background: var(--bg-muted);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+    }
+
+    .badge-neutral .badge-dot {
+        background: var(--text-muted);
+    }
+
+    /* --- Action Buttons --- */
+    .action-btn {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        padding: 6px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .action-btn:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+    }
+
+    .action-btn.danger:hover {
+        background: var(--red-bg);
+        color: var(--red-text);
+        border-color: #fecaca;
+    }
+
+    .action-btn.backup:hover {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: #bfdbfe;
+    }
+
+    .action-btn i {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* --- Modal --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        width: 450px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modal-head {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 14px;
+        font-size: 0.875rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        outline: none;
+        transition: border-color .15s;
+    }
+
+    .form-input:focus {
+        border-color: var(--blue-text);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
+    .modal-foot {
+        padding: 16px 24px;
+        background: var(--bg-muted);
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    /* --- Hold to Delete Button --- */
+    .btn-danger {
+        background: var(--red-bg);
+        color: var(--red-text) !important;
+        /* Force dark red text */
+        border: 1px solid #fecaca;
+        position: relative;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+        transition: transform 0.1s ease;
+        font-weight: 600;
+        /* Extra weight helps legibility */
+    }
+
+    .btn-danger:hover {
+        background: #fef2f2;
+    }
+
+    .hold-progress {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        /* Increased opacity from 0.2 to 0.4 for better visibility */
+        background: rgba(220, 38, 38, 0.4);
+        width: 0%;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .btn-danger span {
+        position: relative;
+        z-index: 10;
+    }
+
+    /* --- Backup Modal --- */
+    .backup-phase {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.875rem;
+    }
+
+    .backup-phase:last-child {
+        border-bottom: none;
+    }
+
+    .backup-phase-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background: var(--bg-muted);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+        transition: background 0.3s, color 0.3s;
+    }
+
+    .backup-phase-icon i {
+        width: 15px;
+        height: 15px;
+    }
+
+    .backup-phase-icon.running {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: #bfdbfe;
+    }
+
+    .backup-phase-icon.done {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border-color: #bbf7d0;
+    }
+
+    .backup-phase-icon.error {
+        background: var(--red-bg);
+        color: var(--red-text);
+        border-color: #fecaca;
+    }
+
+    .backup-phase-label {
+        flex: 1;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .backup-phase-stat {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-align: right;
+    }
+
+    .backup-spinner {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border: 2px solid var(--blue-text);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .backup-result-banner {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        margin-top: 1rem;
+    }
+
+    /* --- Backup Summary Card --- */
+    .backup-summary-card {
+        display: none;
+        margin-top: 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .backup-summary-card.visible {
+        display: block;
+    }
+
+    .backup-summary-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: var(--green-bg);
+        border-bottom: 1px solid #bbf7d0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: var(--green-text);
+    }
+
+    .backup-summary-header.has-failures {
+        background: var(--yellow-bg);
+        border-color: #fde68a;
+        color: var(--yellow-text);
+    }
+
+    .backup-summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+    }
+
+    .backup-summary-table th {
+        padding: 6px 14px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        background: var(--bg-muted);
+        border-bottom: 1px solid var(--border);
+        text-align: right;
+    }
+
+    .backup-summary-table th:first-child { text-align: left; }
+
+    .backup-summary-table td {
+        padding: 7px 14px;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border);
+        text-align: right;
+    }
+
+    .backup-summary-table td:first-child { text-align: left; font-weight: 500; }
+
+    .backup-summary-table tr:last-child td {
+        border-bottom: none;
+        font-weight: 700;
+        background: var(--bg-muted);
+    }
+
+    /* --- Circular Progress Ring --- */
+    .progress-ring {
+        width: 32px;
+        height: 32px;
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring circle {
+        fill: none;
+        stroke-width: 3;
+    }
+
+    .progress-ring .ring-bg {
+        stroke: #e5e7eb;
+    }
+
+    .progress-ring .ring-progress {
+        stroke: var(--blue-text);
+        stroke-linecap: round;
+        stroke-dasharray: 81.68;
+        stroke-dashoffset: 81.68;
+        transition: stroke-dashoffset 0.25s linear;
+    }
+
+    .progress-ring.done .ring-progress {
+        stroke: var(--green-text);
+    }
+
+    .progress-ring.error .ring-progress {
+        stroke: var(--red-text);
+    }
+
+    .progress-ring text {
+        font-weight: 600;
+        font-family: Inter, sans-serif;
+        fill: var(--text-primary);
+    }
+
+    .stat-moved  { color: var(--green-text); font-weight: 600; }
+    .stat-skip   { color: var(--text-secondary); }
+    .stat-fail   { color: var(--red-text); font-weight: 600; }
+</style>
+
+<div class="manager-wrapper">
+
+    <div class="bento-layout">
+
+        <div class="bento-panel stagger-1" style="display: flex; flex-direction: column; justify-content: center;">
+            <h2 class="welcome-title">Device Manager</h2>
+            <p class="welcome-subtitle">Monitor ZKTeco devices across all branches.</p>
+        </div>
+
+        <div class="bento-panel stagger-2"
+            style="display: flex; flex-direction: column; justify-content: center; gap: 1rem; min-width: 350px;">
+            <div class="search-wrapper">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="Search devices, locations, IPs...">
+            </div>
+            <button class="btn btn-add" onclick="openModal()" style="width: 100%; justify-content: center;">
+                <i data-lucide="plus"></i> Add Device
+            </button>
+        </div>
+
+        <div class="table-container pop-in-container stagger-2 span-full">
+            <div id="page-alert" class="alert-box"></div>
+
+            <div class="bento-panel" style="padding: 0; overflow: hidden;">
+                <table class="audit-table" id="deviceTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('bcc', 0)">
+                                <div class="th-content">Device Name <i data-lucide="chevrons-up-down" class="sort-icon"
+                                        id="icon-0"></i></div>
+                            </th>
+                            <th style="width: 150px;" onclick="sortTable('chain_type', 1)">
+                                <div class="th-content">Location <i data-lucide="chevrons-up-down" class="sort-icon"
+                                        id="icon-1"></i></div>
+                            </th>
+                            <th style="width: 200px;" onclick="sortTable('ip_address', 2)">
+                                <div class="th-content">IP Address <i data-lucide="chevrons-up-down" class="sort-icon"
+                                        id="icon-2"></i></div>
+                            </th>
+                            <th style="width: 120px; text-align: right; cursor: default;">
+                                <div class="th-content" style="justify-content: flex-end;">Actions</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="device-tbody">
+                    </tbody>
+                </table>
+
+                <div class="pagination-wrapper">
+                    <div class="page-info" id="pageInfo">Showing 0 to 0 of 0 entries</div>
+                    <div class="pagination-controls">
+                        <button class="btn" id="btnPrev" onclick="changePage(-1)">Previous</button>
+                        <button class="btn" id="btnNext" onclick="changePage(1)">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="device-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container bento-panel" style="padding: 0;">
+        <div class="modal-head">
+            Device Configuration
+        </div>
+        <form id="device-form">
+            <div class="modal-body">
+                <div id="modal-alert" class="alert-box"></div>
+                <input type="hidden" id="device_id" name="device_id">
+
+                <div class="form-group">
+                    <label class="form-label">Device Name</label>
+                    <input type="text" id="bcc" name="bcc" placeholder="e.g. MAKATI" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">IP Address</label>
+                    <input type="text" id="ip_address" name="ip_address" placeholder="192.168.1.201" class="form-input"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Device Key (Default Password is "0")</label>
+                    <input type="text" id="comms_key" name="comms_key" placeholder="Default: 0" class="form-input"
+                        value="0">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" id="chain_type" name="chain_type" placeholder="Makati HQ" class="form-input"
+                        required>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Device</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="backup-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container bento-panel" style="padding: 0; width: 480px;">
+        <div class="modal-head" style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="database" style="width:18px; height:18px; color: var(--blue-text);"></i>
+            <span>Backup to Database</span>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Running backup for <strong id="backup-target-name" style="color: var(--text-primary);"></strong>
+                <span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);" id="backup-target-ip"></span>
+            </p>
+
+            <!-- Phase 1: Users -->
+            <div class="backup-phase">
+                <div class="backup-phase-icon" id="bp-users-icon">
+                    <i data-lucide="users"></i>
+                </div>
+                <div class="backup-phase-label">Phase 1 &mdash; Users</div>
+                <div class="backup-phase-stat" id="bp-users-stat">Waiting&hellip;</div>
+            </div>
+
+            <!-- Phase 2: Fingerprints -->
+            <div class="backup-phase">
+                <div class="backup-phase-icon" id="bp-fingers-icon">
+                    <i data-lucide="fingerprint"></i>
+                </div>
+                <div class="backup-phase-label">Phase 2 &mdash; Fingerprints</div>
+                <div class="backup-phase-stat" id="bp-fingers-stat">Waiting&hellip;</div>
+            </div>
+
+            <!-- Phase 3: Attendance -->
+            <div class="backup-phase">
+                <div class="backup-phase-icon" id="bp-attendance-icon">
+                    <i data-lucide="clock"></i>
+                </div>
+                <div class="backup-phase-label">Phase 3 &mdash; Attendance Logs</div>
+                <div class="backup-phase-stat" id="bp-attendance-stat">Waiting&hellip;</div>
+            </div>
+
+            <!-- Summary Card (shown on success) -->
+            <div class="backup-summary-card" id="backup-summary-card">
+                <div class="backup-summary-header" id="backup-summary-header">
+                    <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+                    <span id="backup-summary-title">Backup Complete</span>
+                </div>
+                <table class="backup-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Phase</th>
+                            <th>Moved</th>
+                            <th>Matched / Skipped</th>
+                            <th>Failed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Users</td>
+                            <td class="stat-moved" id="sum-users-moved">—</td>
+                            <td class="stat-skip"  id="sum-users-skip">—</td>
+                            <td class="stat-fail"  id="sum-users-fail">—</td>
+                        </tr>
+                        <tr>
+                            <td>Fingerprints</td>
+                            <td class="stat-moved" id="sum-fp-moved">—</td>
+                            <td class="stat-skip"  id="sum-fp-skip">—</td>
+                            <td class="stat-fail"  id="sum-fp-fail">—</td>
+                        </tr>
+                        <tr>
+                            <td>Attendance</td>
+                            <td class="stat-moved" id="sum-att-moved">—</td>
+                            <td class="stat-skip"  id="sum-att-skip">—</td>
+                            <td class="stat-fail"  id="sum-att-fail">—</td>
+                        </tr>
+                        <tr>
+                            <td>Total</td>
+                            <td class="stat-moved" id="sum-total-moved">—</td>
+                            <td class="stat-skip"  id="sum-total-skip">—</td>
+                            <td class="stat-fail"  id="sum-total-fail">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Error banner (shown on failure) -->
+            <div class="backup-result-banner alert-error" id="backup-error-banner">
+                <i data-lucide="alert-circle"></i>
+                <span id="backup-error-msg"></span>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="btn" id="backup-close-btn" onclick="closeBackupModal()" disabled>Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="confirm-backup-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container bento-panel" style="width: 400px; text-align: center; padding: 2rem;">
+        <div style="color: var(--blue-text); margin-bottom: 1rem; display: flex; justify-content: center;">
+            <i data-lucide="database" style="width: 48px; height: 48px;"></i>
+        </div>
+        <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Confirm Backup?</h3>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+            This will sync all users, fingerprints, and attendance logs from
+            <strong id="confirm-backup-name" style="color: var(--text-primary);"></strong> to the database.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" class="btn" onclick="closeConfirmBackupModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirm-backup-btn" onclick="confirmBackup()">
+                <i data-lucide="database" style="width:15px;height:15px;"></i> Start Backup
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="delete-modal" class="modal-overlay">
+    <div class="modal-card pop-in-container bento-panel" style="width: 400px; text-align: center; padding: 2rem;">
+        <div style="color: var(--red-text); margin-bottom: 1rem; display: flex; justify-content: center;">
+            <i data-lucide="alert-triangle" style="width: 48px; height: 48px;"></i>
+        </div>
+        <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Delete
+            Terminal?</h3>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+            This action cannot be undone. You are about to remove <strong id="delete-target-name"
+                style="color: var(--text-primary);"></strong>.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" class="btn" onclick="closeDeleteModal()">Cancel</button>
+            <button type="button" id="hold-delete-btn" class="btn btn-danger">
+                <div class="hold-progress" id="hold-progress-bar"></div>
+                <span>Hold 3s to Delete</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let globalDevices = [];
+    let deviceIndex   = {};
+    let currentSortCol = '';
+    let sortAscending = true;
+    let isBackingUp   = false;
+
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        lucide.createIcons();
+        loadDevices();
+        setupFormHandler();
+        startLiveSync();
+
+        document.getElementById('searchInput').addEventListener('input', function (e) {
+            currentPage = 1;
+            renderTable(e.target.value);
+        });
+    });
+
+    function startLiveSync() {
+        setInterval(() => {
+            fetch('/api/get-devices')
+                .then(response => response.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        const newDataString = JSON.stringify(res.data);
+                        const oldDataString = JSON.stringify(globalDevices);
+                        if (newDataString !== oldDataString) {
+                            globalDevices = res.data;
+                            if (!isBackingUp) {
+                                renderTable(document.getElementById('searchInput').value);
+                            }
+                        }
+                    }
+                })
+                .catch(() => { });
+        }, 3000);
+    }
+
+    function showPageAlert(msg, type = "error") {
+        const box = document.getElementById('page-alert');
+        box.className = 'alert-box alert-' + type;
+        box.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i> <span>${msg}</span>`;
+        box.style.display = 'flex';
+        lucide.createIcons();
+        setTimeout(() => { box.style.display = 'none'; }, 5000);
+    }
+
+    function showModalAlert(msg, type = "error") {
+        const box = document.getElementById('modal-alert');
+        box.className = 'alert-box alert-' + type;
+        box.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i> <span>${msg}</span>`;
+        box.style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function loadDevices() {
+        fetch('/api/get-devices')
+            .then(response => response.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    globalDevices = res.data;
+                    renderTable(document.getElementById('searchInput').value);
+                } else {
+                    showPageAlert("Error loading devices: " + res.message, "error");
+                }
+            })
+            .catch(err => {
+                console.error("Fetch error:", err);
+                showPageAlert("Failed to communicate with the server.", "error");
+            });
+    }
+
+    function renderTable(searchTerm = '') {
+        const tbody = document.getElementById('device-tbody');
+        tbody.innerHTML = '';
+        const term = searchTerm.toLowerCase();
+
+        let filtered = globalDevices.filter(d =>
+            d.bcc.toLowerCase().includes(term) ||
+            d.chain_type.toLowerCase().includes(term) ||
+            d.ip_address.toLowerCase().includes(term)
+        );
+
+        if (currentSortCol) {
+            filtered.sort((a, b) => {
+                let valA = a[currentSortCol].toLowerCase();
+                let valB = b[currentSortCol].toLowerCase();
+                if (valA < valB) return sortAscending ? -1 : 1;
+                if (valA > valB) return sortAscending ? 1 : -1;
+                return 0;
+            });
+        }
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const paginatedData = filtered.slice(startIndex, startIndex + itemsPerPage);
+        const endDisplay = Math.min(startIndex + itemsPerPage, totalItems);
+        document.getElementById('pageInfo').innerText = `Showing ${totalItems === 0 ? 0 : startIndex + 1} to ${endDisplay} of ${totalItems} entries`;
+        document.getElementById('btnPrev').disabled = currentPage === 1;
+        document.getElementById('btnNext').disabled = currentPage === totalPages || totalItems === 0;
+
+        if (paginatedData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">No matching devices found.</td></tr>`;
+            return;
+        }
+
+        paginatedData.forEach(device => {
+            const dataKey = `dev-${device.device_id}`;
+            deviceIndex[dataKey] = device;
+
+            let badgeClass = 'badge-neutral';
+            if (device.chain_type === 'RUSTANS') badgeClass = 'badge-rustans';
+            else if (device.chain_type === 'RDS') badgeClass = 'badge-rds';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><div class="device-name"></div></td>
+                <td><span class="badge ${badgeClass}"><span class="badge-dot"></span><span class="badge-label"></span></span></td>
+                <td><span class="device-ip"></span></td>
+                <td>
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                        <button type="button" class="action-btn backup" title="Backup to Database"><i data-lucide="database"></i></button>
+                        <button type="button" class="action-btn btn-edit" title="Edit"><i data-lucide="edit-2"></i></button>
+                        <button type="button" class="action-btn danger btn-delete" title="Delete"><i data-lucide="trash-2"></i></button>
+                    </div>
+                </td>
+            `;
+            tr.querySelector('.device-name').textContent = device.bcc;
+            tr.querySelector('.badge-label').textContent = device.chain_type;
+            tr.querySelector('.device-ip').textContent   = device.ip_address;
+
+            tr.querySelector('.action-btn.backup').addEventListener('click', () => openConfirmBackupModal(deviceIndex[dataKey]));
+            tr.querySelector('.btn-edit').addEventListener('click',          () => openModal(deviceIndex[dataKey]));
+            tr.querySelector('.btn-delete').addEventListener('click',        () => openDeleteModal(device.device_id, device.bcc));
+
+            tbody.appendChild(tr);
+        });
+
+        lucide.createIcons();
+    }
+
+    function changePage(direction) {
+        currentPage += direction;
+        renderTable(document.getElementById('searchInput').value);
+    }
+
+    function sortTable(columnKey, iconIndex) {
+        if (currentSortCol === columnKey) {
+            sortAscending = !sortAscending;
+        } else {
+            currentSortCol = columnKey;
+            sortAscending = true;
+        }
+        currentPage = 1;
+        document.querySelectorAll('.sort-icon').forEach(icon => {
+            icon.setAttribute('data-lucide', 'chevrons-up-down');
+            icon.classList.remove('sort-active');
+        });
+        const activeIcon = document.getElementById('icon-' + iconIndex);
+        activeIcon.setAttribute('data-lucide', sortAscending ? 'chevron-up' : 'chevron-down');
+        activeIcon.classList.add('sort-active');
+        lucide.createIcons();
+        renderTable(document.getElementById('searchInput').value);
+    }
+
+    function openModal(device = null) {
+        const form = document.getElementById('device-form');
+        document.getElementById('modal-alert').style.display = 'none';
+        if (device) {
+            document.getElementById('device_id').value = device.device_id;
+            document.getElementById('bcc').value = device.bcc;
+            document.getElementById('ip_address').value = device.ip_address;
+            document.getElementById('comms_key').value = device.comms_key;
+            document.getElementById('chain_type').value = device.chain_type;
+        } else {
+            form.reset();
+            document.getElementById('device_id').value = '';
+            document.getElementById('comms_key').value = '0';
+        }
+        document.getElementById('device-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('device-modal').style.display = 'none';
+        document.getElementById('device-form').reset();
+    }
+
+    function setupFormHandler() {
+        const form = document.getElementById('device-form');
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            document.getElementById('modal-alert').style.display = 'none';
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = "Saving...";
+            submitBtn.disabled = true;
+
+            const formData = new FormData(form);
+            fetch('/api/save-device', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        closeModal();
+                        showPageAlert("Device saved successfully.", "success");
+                        loadDevices();
+                    } else {
+                        showModalAlert(res.message, "error");
+                    }
+                })
+                .catch(err => {
+                    console.error("Save error:", err);
+                    showModalAlert("A network error occurred. Check your connection.", "error");
+                })
+                .finally(() => {
+                    submitBtn.innerText = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
+    }
+
+    let deleteTimeout;
+    let deviceToDelete = null;
+
+    function openDeleteModal(deviceId, deviceName) {
+        deviceToDelete = deviceId;
+        document.getElementById('delete-target-name').innerText = deviceName;
+        document.getElementById('delete-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('delete-modal').style.display = 'none';
+        deviceToDelete = null;
+        resetHold();
+    }
+
+    const holdBtn = document.getElementById('hold-delete-btn');
+    const holdProgress = document.getElementById('hold-progress-bar');
+
+    function startHold(e) {
+        if (!deviceToDelete) return;
+        if (e.cancelable) e.preventDefault();
+        holdBtn.style.transform = 'scale(0.95)';
+        holdProgress.style.transition = 'width 3s linear';
+        holdProgress.style.width = '100%';
+        deleteTimeout = setTimeout(() => {
+            executeDelete();
+        }, 3000);
+    }
+
+    function resetHold() {
+        clearTimeout(deleteTimeout);
+        holdBtn.style.transform = 'scale(1)';
+        holdProgress.style.transition = 'width 0.2s ease-out';
+        holdProgress.style.width = '0%';
+    }
+
+    holdBtn.addEventListener('mousedown', startHold);
+    holdBtn.addEventListener('mouseup', resetHold);
+    holdBtn.addEventListener('mouseleave', resetHold);
+    holdBtn.addEventListener('touchstart', startHold, { passive: false });
+    holdBtn.addEventListener('touchend', resetHold);
+    holdBtn.addEventListener('touchcancel', resetHold);
+
+    function executeDelete() {
+        const deviceId = deviceToDelete;
+        closeDeleteModal();
+        const formData = new FormData();
+        formData.append('device_id', deviceId);
+        fetch('/api/delete-device', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    showPageAlert("Device removed successfully.", "success");
+                    loadDevices();
+                } else {
+                    showPageAlert("Error deleting device: " + res.message, "error");
+                }
+            })
+            .catch(err => {
+                console.error("Delete error:", err);
+                showPageAlert("Failed to communicate with the server.", "error");
+            });
+    }
+
+    let pendingBackupDevice = null;
+
+    function openConfirmBackupModal(device) {
+        pendingBackupDevice = device;
+        document.getElementById('confirm-backup-name').innerText = `${device.bcc} (${device.ip_address})`;
+        document.getElementById('confirm-backup-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeConfirmBackupModal() {
+        document.getElementById('confirm-backup-modal').style.display = 'none';
+        pendingBackupDevice = null;
+    }
+
+    function confirmBackup() {
+        if (!pendingBackupDevice) return;
+        const device = pendingBackupDevice;
+        closeConfirmBackupModal();
+        triggerBackup(device);
+    }
+
+    function triggerBackup(device) {
+        const phases = ['users', 'fingers', 'attendance'];
+        const icons  = { users: 'users', fingers: 'fingerprint', attendance: 'clock' };
+        phases.forEach(p => {
+            const iconEl = document.getElementById(`bp-${p}-icon`);
+            iconEl.className = 'backup-phase-icon';
+            iconEl.innerHTML = `<i data-lucide="${icons[p]}"></i>`;
+            document.getElementById(`bp-${p}-stat`).innerText = 'Waiting…';
+        });
+        document.getElementById('backup-summary-card').classList.remove('visible');
+        document.getElementById('backup-error-banner').style.display = 'none';
+        document.getElementById('backup-close-btn').disabled = true;
+        isBackingUp = true;
+
+        document.getElementById('backup-target-name').innerText = device.bcc + ' ';
+        document.getElementById('backup-target-ip').innerText   = `(${device.ip_address})`;
+        document.getElementById('backup-modal').style.display = 'flex';
+        lucide.createIcons();
+
+        animatePhase('users', 1200, () => {
+            animatePhase('fingers', 1500, () => {
+                animatePhase('attendance', 1800);
+            });
+        });
+
+        const formData = new FormData();
+        formData.append('device_id',  device.device_id);
+        formData.append('ip_address', device.ip_address);
+        formData.append('comms_key',  device.comms_key);
+        formData.append('bcc',        device.bcc);
+
+        fetch('/api/backup-device', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    const s = res.summary;
+                    setPhaseState('users', 'done');
+                    document.getElementById('bp-users-stat').innerText = `${s.users.synced} synced · ${s.users.matched} matched`;
+                    setPhaseState('fingers', 'done');
+                    document.getElementById('bp-fingers-stat').innerText = `${s.fingerprints.new} new · ${s.fingerprints.skipped} skipped`;
+                    setPhaseState('attendance', 'done');
+                    document.getElementById('bp-attendance-stat').innerText = `${s.attendance.new} new · ${s.attendance.skipped} skipped`;
+
+                    const uM = s.users.synced,        uS = s.users.matched,       uF = s.users.failed        || 0;
+                    const fM = s.fingerprints.new,    fS = s.fingerprints.skipped, fF = s.fingerprints.failed || 0;
+                    const aM = s.attendance.new,      aS = s.attendance.skipped,   aF = s.attendance.failed   || 0;
+                    const tM = uM + fM + aM;
+                    const tS = uS + fS + aS;
+                    const tF = uF + fF + aF;
+
+                    document.getElementById('sum-users-moved').innerText = uM;
+                    document.getElementById('sum-users-skip').innerText  = uS;
+                    document.getElementById('sum-users-fail').innerText  = uF;
+                    document.getElementById('sum-fp-moved').innerText    = fM;
+                    document.getElementById('sum-fp-skip').innerText     = fS;
+                    document.getElementById('sum-fp-fail').innerText     = fF;
+                    document.getElementById('sum-att-moved').innerText   = aM;
+                    document.getElementById('sum-att-skip').innerText    = aS;
+                    document.getElementById('sum-att-fail').innerText    = aF;
+                    document.getElementById('sum-total-moved').innerText = tM;
+                    document.getElementById('sum-total-skip').innerText  = tS;
+                    document.getElementById('sum-total-fail').innerText  = tF;
+
+                    const header = document.getElementById('backup-summary-header');
+                    const titleEl = document.getElementById('backup-summary-title');
+                    // Safely update the header icon: change data-lucide on the existing element (now an SVG)
+                    const iconElem = header.querySelector('[data-lucide]');
+                    if (tF > 0) {
+                        header.classList.add('has-failures');
+                        if (iconElem) iconElem.setAttribute('data-lucide', 'alert-triangle');
+                        titleEl.innerText = `Backup Complete — ${tF} record${tF !== 1 ? 's' : ''} failed`;
+                    } else {
+                        header.classList.remove('has-failures');
+                        if (iconElem) iconElem.setAttribute('data-lucide', 'check-circle');
+                        titleEl.innerText = 'Backup Complete';
+                    }
+                    // Re-render the icon
+                    lucide.createIcons({ elements: [iconElem] });
+
+                    document.getElementById('backup-summary-card').classList.add('visible');
+                    showPageAlert(`Backup completed for ${device.bcc}.`, 'success');
+                } else {
+                    phases.forEach(p => {
+                        if (document.getElementById(`bp-${p}-icon`).classList.contains('running')) {
+                            setPhaseState(p, 'error');
+                            document.getElementById(`bp-${p}-stat`).innerText = 'Failed';
+                        }
+                    });
+                    document.getElementById('backup-error-msg').innerText = res.message || 'An unknown error occurred.';
+                    document.getElementById('backup-error-banner').style.display = 'flex';
+                    showPageAlert(`Backup failed for ${device.bcc}: ${res.message}`, 'error');
+                }
+            })
+            .catch(err => {
+                phases.forEach(p => setPhaseState(p, 'error'));
+                document.getElementById('backup-error-msg').innerText = 'Network error — could not reach the server.';
+                document.getElementById('backup-error-banner').style.display = 'flex';
+                console.error('Backup error:', err);
+            })
+            .finally(() => {
+                isBackingUp = false;
+                document.getElementById('backup-close-btn').disabled = false;
+                lucide.createIcons();
+            });
+    }
+
+    function setPhaseState(phase, state, progress = 0) {
+        const iconEl = document.getElementById(`bp-${phase}-icon`);
+        iconEl.className = `backup-phase-icon ${state}`;
+
+        const radius = 13;
+        const circumference = 2 * Math.PI * radius;
+        const offset = circumference - (progress / 100) * circumference;
+
+        if (state === 'running') {
+            iconEl.innerHTML = `
+                <svg class="progress-ring" width="32" height="32">
+
+                    <circle
+                        class="ring-bg"
+                        cx="16"
+                        cy="16"
+                        r="${radius}">
+                    </circle>
+
+                    <circle
+                        class="ring-progress"
+                        cx="16"
+                        cy="16"
+                        r="${radius}"
+                        style="
+                            stroke-dasharray:${circumference};
+                            stroke-dashoffset:${offset};
+                        ">
+                    </circle>
+
+                    <text
+                        x="16"
+                        y="18"
+                        text-anchor="middle"
+                        font-size="8"
+                        fill="currentColor"
+                        transform="rotate(90 16 16)">
+                        ${Math.round(progress)}
+                    </text>
+
+                </svg>
+            `;
+        }
+        else if (state === 'done') {
+            iconEl.innerHTML = `
+                <svg class="progress-ring done" width="32" height="32">
+
+                    <circle
+                        class="ring-bg"
+                        cx="16"
+                        cy="16"
+                        r="${radius}">
+                    </circle>
+
+                    <circle
+                        class="ring-progress"
+                        cx="16"
+                        cy="16"
+                        r="${radius}"
+                        style="
+                            stroke-dasharray:${circumference};
+                            stroke-dashoffset:0;
+                        ">
+                    </circle>
+
+                    <text
+                        x="16"
+                        y="18"
+                        text-anchor="middle"
+                        font-size="8"
+                        fill="currentColor"
+                        transform="rotate(90 16 16)">
+                        ✓
+                    </text>
+
+                </svg>
+            `;
+        }
+        else if (state === 'error') {
+            iconEl.innerHTML = `
+                <svg class="progress-ring error" width="32" height="32">
+
+                    <circle
+                        class="ring-bg"
+                        cx="16"
+                        cy="16"
+                        r="${radius}">
+                    </circle>
+
+                    <circle
+                        class="ring-progress"
+                        cx="16"
+                        cy="16"
+                        r="${radius}"
+                        style="
+                            stroke-dasharray:${circumference};
+                            stroke-dashoffset:${circumference * 0.25};
+                        ">
+                    </circle>
+
+                    <text
+                        x="16"
+                        y="18"
+                        text-anchor="middle"
+                        font-size="8"
+                        fill="currentColor"
+                        transform="rotate(90 16 16)">
+                        ✕
+                    </text>
+
+                </svg>
+            `;
+        }
+    }
+
+    function animatePhase(phase, duration = 1500, callback = null) {
+        let progress = 0;
+
+        const interval = setInterval(() => {
+
+            progress += 5;
+
+            if (progress >= 95) {
+                clearInterval(interval);
+
+                setPhaseState(phase, 'running', 95);
+
+                if (callback) {
+                    callback();
+                }
+
+                return;
+            }
+
+            setPhaseState(phase, 'running', progress);
+
+        }, duration / 20);
+    }
+
+    function closeBackupModal() {
+        if (isBackingUp) return;
+        document.getElementById('backup-modal').style.display = 'none';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,1130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* ── Master Theme ── */
+  :root {
+    --bg-page: #0a0a12;
+    --bg-surface: #ffffff;
+    --bg-muted: #f9fafb;
+    --border: #e4e7ec;
+    --border-light: #e4e7ec;
+    --text-primary: #101828;
+    --text-secondary: #475467;
+    --text-muted: #98a2b3;
+
+    /* ── Page accent: Purple (card-purple #8b5cf6) ── */
+    --accent:       #8b5cf6;
+    --accent-dark:  #6d28d9;
+    --accent-light: #f5f3ff;
+    --accent-glow:  rgba(139,92,246,.15);
+    --accent-grad:  linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%);
+    --success: #10b981;
+    --error: #ef4444;
+
+    --blue-bg: #f5f3ff;
+    --blue-text: #6d28d9;
+    --green-bg: #f0fdf4;
+    --green-text: #15803d;
+    --red-bg: #fef2f2;
+    --red-text: #b91c1c;
+
+    /* Table Colors */
+    --tbl-bg: #ffffff;
+    --tbl-head-bg: #faf9ff;
+    --tbl-border: #e4e7ec;
+    --tbl-text: #101828;
+    --tbl-muted: #475467;
+    --tbl-hover: #f5f3ff;
+    --tbl-selected: #f5f3ff;
+    --tbl-sel-border: #8b5cf6;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --bento-radius: 20px;
+  }
+
+  body { background: var(--bg-page) !important; color: var(--text-primary) !important; font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+
+  /* --- Layout & Spacing Tightened --- */
+  .dashboard-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    min-height: 100vh;
+    padding: 1rem 2rem;
+    box-sizing: border-box;
+  }
+
+  .dashboard-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1200px;
+    gap: 1rem;
+  }
+
+  .page-header-bar {
+    width: 100%;
+    background: var(--accent-grad);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    padding: 1.75rem 1.5rem;
+    gap: 1.5rem;
+    box-shadow: 0 4px 14px rgba(139,92,246,.3);
+    animation: fadeInDown 0.5s ease-out forwards;
+    position: relative; overflow: hidden;
+  }
+  .page-header-bar::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: rgba(255,255,255,.06); pointer-events: none;
+  }
+
+  .header-icon-wrap {
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,.18);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+
+  .header-icon-wrap i { font-size: 1.4rem; color: #fff; }
+
+  .welcome-title { font-size: 1.35rem; font-weight: 700; color: #fff; margin: 0; }
+  .welcome-subtitle { font-size: 0.8rem; color: rgba(255,255,255,.8); margin: 4px 0 0 0; }
+
+  /* ── Stepper ── */
+  .step-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .step-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.3s;
+  }
+
+  .step-chip .chip-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    transition: all 0.3s;
+  }
+
+  .step-chip.active {
+    border-color: #ddd6fe;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+  }
+
+  .step-chip.active .chip-num {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .step-chip.done {
+    border-color: #bbf7d0;
+    background: var(--green-bg);
+    color: var(--green-text);
+  }
+
+  .step-chip.done .chip-num {
+    border-color: var(--green-text);
+    color: var(--green-text);
+  }
+
+  .step-arrow {
+    color: var(--text-muted);
+    opacity: 0.6;
+    font-size: 0.8rem;
+    margin: 0 4px;
+  }
+
+  .manager-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    animation: popIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .pane-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pane-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.85rem;
+  }
+
+  .pane-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pane-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  .icon-blue {
+    background: var(--blue-bg);
+    color: var(--blue-text);
+  }
+
+  .icon-green {
+    background: var(--green-bg);
+    color: var(--green-text);
+  }
+
+  .pane-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .store-badge,
+  .count-pill {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .store-badge {
+    background: var(--blue-bg);
+    border-color: #bfdbfe;
+    color: var(--blue-text);
+  }
+
+  .count-pill {
+    background: var(--green-bg);
+    border-color: #bbf7d0;
+    color: var(--green-text);
+  }
+
+  .store-badge.visible,
+  .count-pill.visible {
+    display: flex;
+  }
+
+  /* Inputs & Search */
+  .search-wrap {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .search-wrap .si {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+  }
+
+  .search-input {
+    flex: 1;
+    padding: 10px 14px 10px 36px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus {
+    border-color: var(--accent);
+  }
+
+  /* Table */
+  .table-shell {
+    background: var(--tbl-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--tbl-border);
+  }
+
+  .table-scroll {
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .design-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .design-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .design-table th {
+    background: var(--tbl-head-bg);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--tbl-muted);
+    border-bottom: 1px solid var(--tbl-border);
+  }
+
+  .design-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--tbl-border);
+    color: var(--tbl-text);
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .clickable-row:hover {
+    background: var(--tbl-hover);
+  }
+
+  .clickable-row.selected {
+    background: var(--tbl-selected) !important;
+  }
+
+  .clickable-row.selected td:first-child {
+    border-left: 3px solid var(--tbl-sel-border);
+    padding-left: 11px;
+  }
+
+  .target-row.disabled-row {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: var(--bg-muted);
+  }
+
+  /* Pagination Controls */
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--tbl-head-bg);
+    border-top: 1px solid var(--tbl-border);
+  }
+
+  .page-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--tbl-border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    color: var(--tbl-text);
+    transition: 0.2s;
+  }
+
+  .page-btn:hover:not(:disabled) {
+    background: var(--tbl-hover);
+  }
+
+  .page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .page-info {
+    font-size: 0.8rem;
+    color: var(--tbl-muted);
+    font-weight: 600;
+  }
+
+  .select-all-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 14px;
+    background: var(--blue-bg);
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    color: var(--blue-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .select-all-bar.visible {
+    display: flex;
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--blue-text);
+    text-decoration: underline;
+  }
+
+  .link-btn.danger {
+    color: var(--error);
+  }
+
+  .chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px 4px 12px;
+    border-radius: 20px;
+    background: var(--blue-bg);
+    border: 1px solid #bfdbfe;
+    color: var(--blue-text);
+    font-size: 0.77rem;
+    font-weight: 500;
+  }
+
+  .chip-x {
+    background: none;
+    border: none;
+    color: var(--blue-text);
+    cursor: pointer;
+    padding: 0;
+    opacity: 0.6;
+  }
+
+  .chip-x:hover {
+    opacity: 1;
+  }
+
+  .action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .sel-info {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+  }
+
+  .btn-proceed {
+    background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .btn-proceed:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--text-muted);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  /* ── Modals & Timers ── */
+  /* Find this block in your <style> section */
+  .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+
+      /* CHANGE THESE TWO LINES: */
+      align-items: center;    /* Changed from flex-start to center */
+      padding-top: 0;         /* Changed from 10vh to 0 */
+
+      z-index: 1060;
+  }
+
+  .modal-backdrop.open {
+    display: flex;
+  }
+
+  .modal-window {
+    background: var(--bg-surface);
+    width: 100%;
+    max-width: 640px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .modal-head {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-head h3 {
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .modal-close-btn {
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s;
+  }
+
+  .modal-close-btn:hover {
+    background: var(--border);
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg-muted);
+  }
+
+  .btn-cancel {
+    flex: 1;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .btn-cancel:hover {
+    background: var(--bg-muted);
+  }
+
+  .btn-confirm {
+    flex: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+  }
+
+  /* Timer UI Elements */
+  .timer-bar-container {
+    height: 4px;
+    width: 100%;
+    background: var(--bg-muted);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+  }
+
+  .timer-progress {
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    transform-origin: left;
+  }
+
+  .timer-progress.success { background: var(--success); }
+  .timer-progress.error { background: var(--error); }
+
+  .timer-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    font-weight: 600;
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+</style>
+
+<div class="dashboard-wrapper">
+  <div class="dashboard-content">
+
+    <div class="page-header-bar">
+        <div class="header-icon-wrap"><i class="fas fa-exchange-alt"></i></div>
+        <div>
+          <h1 class="welcome-title">Employee Copy</h1>
+          <p class="welcome-subtitle">Select a store, pick employees, then assign target locations.</p>
+        </div>
+        <div style="margin-left: auto;">
+        <div class="step-chips">
+        <div class="step-chip active" id="step1-chip">
+          <div class="chip-num" id="step1-num">1</div><span>Select Store</span>
+        </div>
+        <i class="fas fa-chevron-right step-arrow"></i>
+        <div class="step-chip" id="step2-chip">
+          <div class="chip-num" id="step2-num">2</div><span>Employees</span>
+        </div>
+        <i class="fas fa-chevron-right step-arrow"></i>
+        <div class="step-chip" id="step3-chip">
+          <div class="chip-num" id="step3-num">3</div><span>Assign Target</span>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div class="manager-grid">
+      <div class="pane-card">
+        <div class="pane-header-row">
+          <div class="pane-title-group">
+            <div class="pane-icon icon-blue"><i class="fas fa-server"></i></div>
+            <h3 class="pane-title">Select Store Location</h3>
+          </div>
+          <div class="store-badge" id="storeBadge"><i class="fas fa-map-marker-alt"></i><span
+              id="storeBadgeText">—</span></div>
+        </div>
+        <div class="search-wrap">
+          <i class="fas fa-search si"></i>
+          <input type="text" id="originStoreSearch" class="search-input" placeholder="Search store name or IP…">
+        </div>
+        <div class="table-shell">
+          <div class="table-scroll">
+            <table class="design-table">
+              <thead>
+                <tr>
+                  <th>Store Location / Name</th>
+                  <th>Device IP</th>
+                </tr>
+              </thead>
+              <tbody id="originStoreBody">
+                {% for device in devices %}
+                <tr class="clickable-row origin-row" data-ip="{{ device.ip }}"
+                  onclick="selectOriginTerminal('{{ device.ip }}', '{{ device.name }}', this)">
+                  <td><strong>{{ device.name }}</strong></td>
+                  <td style="color:var(--tbl-muted);">{{ device.ip }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane-card">
+        <div class="pane-header-row">
+          <div class="pane-title-group">
+            <div class="pane-icon icon-green"><i class="fas fa-users"></i></div>
+            <h3 class="pane-title">Select Employees <span class="count-pill" id="countPill"><span
+                  id="countText">0</span> selected</span></h3>
+          </div>
+        </div>
+
+        <div class="select-all-bar" id="selectAllBar">
+          <span><i class="fas fa-users" style="margin-right:6px;"></i><span id="selectAllLabel">—</span></span>
+          <div style="display:flex;gap:14px;">
+            <button class="link-btn" onclick="selectAllEmployees()">Select All</button>
+            <button class="link-btn danger" onclick="clearAllEmployees()">Clear</button>
+          </div>
+        </div>
+
+        <div class="search-wrap">
+          <i class="fas fa-search si"></i>
+          <input type="text" id="employeeSearch" class="search-input" placeholder="Search by ID or name…">
+        </div>
+
+        <div class="table-shell">
+          <div class="table-scroll">
+            <table class="design-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;"></th>
+                  <th>Employee ID</th>
+                  <th>Name</th>
+                </tr>
+              </thead>
+              <tbody id="employeeBody">
+                <tr>
+                  <td colspan="3">
+                    <div class="empty-state">Choose a store location above to load employees.</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination-controls" id="empPagination" style="display: none;">
+            <button onclick="changePage(-1)" id="prevPageBtn" class="page-btn"><i
+                class="fas fa-chevron-left"></i></button>
+            <span class="page-info">Page <span id="curPageNum">1</span> of <span id="totalPageNum">1</span></span>
+            <button onclick="changePage(1)" id="nextPageBtn" class="page-btn"><i
+                class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+
+        <div class="chip-list" id="chipList"></div>
+
+        <div class="action-row">
+          <div class="sel-info" id="selInfo">No employees selected.</div>
+          <button id="proceedBtn" class="btn-proceed" disabled onclick="toggleModal(true)"><i
+              class="fas fa-arrow-right"></i> Proceed to Assignment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="assignModal" class="modal-backdrop">
+  <div class="modal-window">
+    <div class="modal-head">
+      <h3>
+        <div
+          style="width:32px;height:32px;background:var(--accent);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-map-pin"></i>
+        </div>
+        Select Target Store
+      </h3>
+      <button class="modal-close-btn" onclick="toggleModal(false)"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="search-wrap" style="margin-bottom:0.85rem;">
+        <i class="fas fa-search si"></i>
+        <input type="text" id="modalStoreSearch" class="search-input" placeholder="Search target store…">
+      </div>
+      <div class="table-shell">
+        <div class="table-scroll" style="max-height: 250px;">
+          <table class="design-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>Store Location</th>
+                <th>Device IP</th>
+              </tr>
+            </thead>
+            <tbody id="targetStoreBody">
+              {% for device in devices %}
+              <tr class="target-row">
+                <td><input type="radio" name="targetStore" value="{{ device.ip }}" class="target-cb" style="accent-color: #8b5cf6;">
+                </td>
+                <td><strong>{{ device.name }}</strong></td>
+                <td style="color:var(--tbl-muted);">{{ device.ip }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="toggleModal(false)">Cancel</button>
+      <button id="confirmTransferBtn" class="btn-confirm" onclick="submitTransfer()"><i class="fas fa-paper-plane"></i>
+        Confirm Transfer</button>
+    </div>
+  </div>
+</div>
+
+<div id="successModal" class="modal-backdrop">
+  <div class="modal-window" style="max-width: 420px; text-align: center; padding: 3rem 2rem 2.5rem;">
+    <div style="font-size: 4rem; color: var(--success); margin-bottom: 1rem; animation: popIn 0.5s ease forwards;">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <h3 style="color: var(--text-primary); font-size: 1.6rem; margin-top: 0; margin-bottom: 0.5rem; font-weight: 700;">
+      Transfer Complete</h3>
+    <p id="successMessage" style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 5px;"></p>
+    <div class="timer-text" id="successTimerText">Closing in 3s...</div>
+    
+    <div style="margin-top: 2rem;">
+      <button class="btn-proceed" style="width: 100%; justify-content: center; padding: 12px; background: var(--success);"
+        onclick="forceCloseSuccess()">Done</button>
+    </div>
+    
+    <div class="timer-bar-container">
+      <div class="timer-progress success" id="successProgressBar"></div>
+    </div>
+  </div>
+</div>
+
+<div id="errorModal" class="modal-backdrop">
+  <div class="modal-window" style="max-width: 420px; text-align: center; padding: 3rem 2rem 2.5rem;">
+    <div style="font-size: 4rem; color: var(--error); margin-bottom: 1rem; animation: popIn 0.5s ease forwards;">
+      <i class="fas fa-times-circle"></i>
+    </div>
+    <h3 style="color: var(--text-primary); font-size: 1.6rem; margin-top: 0; margin-bottom: 0.5rem; font-weight: 700;">
+      Transfer Failed</h3>
+    <p id="errorMessage" style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 5px;"></p>
+    <div class="timer-text" id="errorTimerText">Closing in 3s...</div>
+    
+    <div style="margin-top: 2rem;">
+      <button class="btn-cancel" style="width: 100%; justify-content: center; padding: 12px; background: var(--bg-muted);"
+        onclick="forceCloseError()">Try Again</button>
+    </div>
+
+    <div class="timer-bar-container">
+      <div class="timer-progress error" id="errorProgressBar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let selectedOrigin = null;
+  let selectedOriginName = null;
+  let selectedEmployees = new Map();
+
+  let allEmployees = [];
+  let filteredEmployees = [];
+  let currentPage = 1;
+  const pageSize = 15;
+
+  let countdownInterval;
+  let timerTimeout;
+
+  function setStep(n) {
+    [1, 2, 3].forEach(i => {
+      const chip = document.getElementById(`step${i}-chip`);
+      const num = document.getElementById(`step${i}-num`);
+      chip.className = 'step-chip'; num.innerHTML = i;
+      if (i < n) { chip.classList.add('done'); num.innerHTML = '<i class="fas fa-check" style="font-size:0.6rem"></i>'; }
+      else if (i === n) chip.classList.add('active');
+    });
+  }
+
+  // Filters for Stores
+  document.getElementById('originStoreSearch').addEventListener('input', e => {
+    const t = e.target.value.toLowerCase();
+    document.querySelectorAll('.origin-row').forEach(r => r.style.display = r.innerText.toLowerCase().includes(t) ? '' : 'none');
+  });
+  document.getElementById('modalStoreSearch').addEventListener('input', e => {
+    const t = e.target.value.toLowerCase();
+    document.querySelectorAll('.target-row').forEach(r => r.style.display = r.innerText.toLowerCase().includes(t) ? '' : 'none');
+  });
+
+  // Load Employees API
+  function selectOriginTerminal(ip, name, el) {
+    selectedOrigin = ip; selectedOriginName = name;
+    selectedEmployees.clear(); renderChips(); refreshBtn();
+    document.querySelectorAll('.origin-row').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('storeBadgeText').textContent = name;
+    document.getElementById('storeBadge').classList.add('visible');
+
+    const body = document.getElementById('employeeBody');
+    body.innerHTML = `<tr><td colspan="3"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Fetching employees…</div></td></tr>`;
+    document.getElementById('selectAllBar').classList.remove('visible');
+    document.getElementById('empPagination').style.display = 'none';
+    setStep(2);
+
+    fetch(`/api/get_device_employees/${ip}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success' && data.users.length > 0) {
+          allEmployees = data.users;
+          filteredEmployees = [...allEmployees];
+          currentPage = 1;
+
+          document.getElementById('selectAllLabel').textContent = `${allEmployees.length} employees found`;
+          document.getElementById('selectAllBar').classList.add('visible');
+          document.getElementById('empPagination').style.display = 'flex';
+
+          renderEmployeePage();
+        } else {
+          allEmployees = []; filteredEmployees = [];
+          body.innerHTML = `<tr><td colspan="3"><div class="empty-state">No employees found.</div></td></tr>`;
+        }
+      }).catch(() => {
+        body.innerHTML = `<tr><td colspan="3"><div class="empty-state">Failed to load employees.</div></td></tr>`;
+      });
+  }
+
+  // Frontend Search/Filter for Employees
+  document.getElementById('employeeSearch').addEventListener('input', function (e) {
+    const term = e.target.value.toLowerCase();
+    filteredEmployees = allEmployees.filter(u =>
+      u.name.toLowerCase().includes(term) || String(u.code).toLowerCase().includes(term)
+    );
+    currentPage = 1;
+    renderEmployeePage();
+  });
+
+  // Render Page
+  function renderEmployeePage() {
+    const body = document.getElementById('employeeBody');
+    body.innerHTML = '';
+
+    const totalPages = Math.ceil(filteredEmployees.length / pageSize) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    const pageItems = filteredEmployees.slice(start, end);
+
+    if (pageItems.length === 0) {
+      body.innerHTML = '<tr><td colspan="3"><div class="empty-state">No matches found.</div></td></tr>';
+    } else {
+      pageItems.forEach(u => {
+        const isChecked = selectedEmployees.has(String(u.code));
+        const tr = document.createElement('tr');
+        tr.className = `clickable-row emp-row ${isChecked ? 'selected' : ''}`;
+        tr.innerHTML = `
+                <td class="cb-col"><input type="checkbox" class="emp-cb" ${isChecked ? 'checked' : ''} style="accent-color:#8b5cf6;"></td>
+                <td style="font-family:monospace;font-size:0.82rem;color:var(--tbl-muted);">${u.code}</td>
+                <td><strong>${u.name}</strong></td>
+              `;
+        const cb = tr.querySelector('.emp-cb');
+        cb.addEventListener('change', () => toggle(String(u.code), u.name, tr, cb.checked));
+        tr.addEventListener('click', e => { if (e.target === cb) return; cb.checked = !cb.checked; toggle(String(u.code), u.name, tr, cb.checked); });
+        body.appendChild(tr);
+      });
+    }
+
+    document.getElementById('curPageNum').textContent = currentPage;
+    document.getElementById('totalPageNum').textContent = totalPages;
+    document.getElementById('prevPageBtn').disabled = currentPage === 1;
+    document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+  }
+
+  function changePage(dir) {
+    currentPage += dir;
+    renderEmployeePage();
+  }
+
+  function toggle(code, name, row, checked) {
+    if (checked) { selectedEmployees.set(code, name); row.classList.add('selected'); }
+    else { selectedEmployees.delete(code); row.classList.remove('selected'); }
+    renderChips(); refreshBtn();
+    setStep(selectedEmployees.size > 0 ? 3 : 2);
+  }
+
+  function selectAllEmployees() {
+    filteredEmployees.forEach(u => selectedEmployees.set(String(u.code), u.name));
+    renderEmployeePage();
+    renderChips(); refreshBtn();
+    if (selectedEmployees.size) setStep(3);
+  }
+
+  function clearAllEmployees() {
+    selectedEmployees.clear();
+    renderEmployeePage();
+    renderChips(); refreshBtn(); setStep(2);
+  }
+
+  function removeEmployee(code) {
+    selectedEmployees.delete(code);
+    renderEmployeePage();
+    renderChips(); refreshBtn();
+    if (!selectedEmployees.size) setStep(2);
+  }
+
+  function renderChips() {
+    const list = document.getElementById('chipList');
+    list.innerHTML = '';
+    selectedEmployees.forEach((name, code) => {
+      const d = document.createElement('div'); d.className = 'chip';
+      d.innerHTML = `<span>${name}</span><button class="chip-x" onclick="removeEmployee('${code}')"><i class="fas fa-times"></i></button>`;
+      list.appendChild(d);
+    });
+    const n = selectedEmployees.size;
+    document.getElementById('countText').textContent = n;
+    document.getElementById('countPill').classList.toggle('visible', n > 0);
+    document.getElementById('selInfo').innerHTML = n === 0 ? 'No employees selected.' : `<strong>${n}</strong> selected`;
+  }
+
+  function refreshBtn() { document.getElementById('proceedBtn').disabled = selectedEmployees.size === 0; }
+
+  // Target Modal logic
+  function toggleModal(show) {
+    document.getElementById('assignModal').classList.toggle('open', show);
+    if (show) {
+      document.querySelectorAll('.target-row').forEach(row => {
+        const cb = row.querySelector('.target-cb');
+        const isOrigin = cb.value === selectedOrigin;
+        
+        cb.disabled = isOrigin; 
+        if (isOrigin) {
+          cb.checked = false;
+          row.classList.add('disabled-row');
+        } else {
+          row.classList.remove('disabled-row');
+        }
+        
+        // Add row click assignment if not already added
+        if(!row.dataset.clickBound) {
+            row.addEventListener('click', e => { 
+                if (!cb.disabled) cb.checked = true; // Radio button behavior enforces single selection
+            });
+            row.dataset.clickBound = "true";
+        }
+      });
+    }
+  }
+
+  // --- Auto-Close Modals Logic ---
+  function showAutoCloseModal(modalId, textId, progressId, msgElementId, message, isSuccess) {
+      const modal = document.getElementById(modalId);
+      document.getElementById(msgElementId).textContent = message;
+      
+      const textEl = document.getElementById(textId);
+      const progressEl = document.getElementById(progressId);
+      
+      let timeLeft = 3; // 3 seconds
+      textEl.textContent = `Closing in ${timeLeft}s...`;
+      
+      // Reset progress bar
+      progressEl.style.transition = 'none';
+      progressEl.style.transform = 'scaleX(1)';
+      
+      modal.classList.add('open');
+
+      // Start animation
+      clearTimeout(timerTimeout);
+      timerTimeout = setTimeout(() => {
+          progressEl.style.transition = 'transform 3s linear';
+          progressEl.style.transform = 'scaleX(0)';
+      }, 50);
+
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+          timeLeft--;
+          textEl.textContent = `Closing in ${timeLeft}s...`;
+          
+          if (timeLeft <= 0) {
+              clearInterval(countdownInterval);
+              modal.classList.remove('open');
+              if (isSuccess) window.location.reload();
+          }
+      }, 1000);
+  }
+
+  function forceCloseSuccess() {
+      clearInterval(countdownInterval);
+      clearTimeout(timerTimeout);
+      window.location.reload();
+  }
+
+  function forceCloseError() {
+      clearInterval(countdownInterval);
+      clearTimeout(timerTimeout);
+      document.getElementById('errorModal').classList.remove('open');
+  }
+
+  function submitTransfer() {
+    const selectedTarget = document.querySelector('.target-cb:checked');
+    if (!selectedTarget) return alert('Select a target location.');
+
+    const targetIp = selectedTarget.value;
+
+    const fd = new FormData();
+    fd.append('source_branch', selectedOrigin);
+    selectedEmployees.forEach((_, code) => fd.append('employee_id', code));
+    fd.append('dest_branch', targetIp);
+
+    const submitBtn = document.getElementById('confirmTransferBtn');
+    const originalContent = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    submitBtn.disabled = true;
+
+    fetch('/move_registration', { method: 'POST', body: fd })
+      .then(response => response.json())
+      .then(data => {
+        toggleModal(false);
+        if (data.status === 'success') {
+            showAutoCloseModal('successModal', 'successTimerText', 'successProgressBar', 'successMessage', data.message, true);
+        } else {
+            showAutoCloseModal('errorModal', 'errorTimerText', 'errorProgressBar', 'errorMessage', data.message || "An unknown error occurred during transfer.", false);
+        }
+      })
+      .catch(err => {
+        toggleModal(false);
+        showAutoCloseModal('errorModal', 'errorTimerText', 'errorProgressBar', 'errorMessage', "A network error occurred. Please check your connection and try again.", false);
+        console.error(err);
+      })
+      .finally(() => {
+        submitBtn.innerHTML = originalContent;
+        submitBtn.disabled = false;
+      });
+  }
+
+  setStep(1);
+</script>
+{% endblock %}
