@@ -166,6 +166,7 @@ site/
 # Uncomment if you never want to commit test files
 # ==========================================================
 TestFolders/
+phase2/
 
 # ==========================================================
 # Git Merge / Patch Files
